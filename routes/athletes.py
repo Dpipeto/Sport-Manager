@@ -160,6 +160,11 @@ def update_status(id):
 @permission_required('athletes.delete')
 def delete(id):
     athlete = scoped_or_404(Athlete, id)
+    # Desvincular transacciones bancarias (FK en PostgreSQL)
+    from models import BankTransaction
+    BankTransaction.query.filter_by(athlete_id=athlete.id).update(
+        {'athlete_id': None, 'payment_id': None})
+    db.session.flush()
     db.session.delete(athlete)
     db.session.commit()
     flash('Deportista eliminado.', 'warning')

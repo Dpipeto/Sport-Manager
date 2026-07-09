@@ -64,6 +64,11 @@ class Club(db.Model):
     # Integraciones
     sms_api_key = db.Column(db.String(64), unique=True)    # webhook SMS bancarios
     ntfy_topic  = db.Column(db.String(100))                # notificaciones push del club
+    # Correo propio del club (para notificaciones de cobros)
+    mail_username = db.Column(db.String(150))   # cuenta Gmail del club
+    mail_password = db.Column(db.String(150))   # contraseña de aplicación
+    mail_server   = db.Column(db.String(100), default='smtp.gmail.com')
+    mail_port     = db.Column(db.Integer, default=587)
 
     users = db.relationship('User', backref='club', lazy=True)
     athletes = db.relationship('Athlete', backref='club', lazy=True)

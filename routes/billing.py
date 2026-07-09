@@ -66,9 +66,12 @@ def new():
         db.session.add(payment)
         db.session.commit()
         if send_email_flag:
-            _send_payment_email(payment)
-            payment.email_sent = True
-            db.session.commit()
+            ok, reason = _send_payment_email(payment)
+            if ok:
+                payment.email_sent = True
+                db.session.commit()
+            else:
+                flash(f'Cobro creado, pero el correo no se envió. {reason}', 'warning')
         flash('Registro creado exitosamente.', 'success')
         return redirect(url_for('billing.index'))
     return render_template('billing/form.html', payment=None, athletes=athletes)
@@ -116,12 +119,13 @@ def delete(id):
 @permission_required('billing.view')
 def send_email(id):
     payment = athlete_scoped_or_404(Payment, id)
-    if _send_payment_email(payment):
+    ok, reason = _send_payment_email(payment)
+    if ok:
         payment.email_sent = True
         db.session.commit()
         flash('Email enviado correctamente.', 'success')
     else:
-        flash('No se pudo enviar el email. Verifica la configuración de correo.', 'danger')
+        flash(f'No se pudo enviar el email. {reason}', 'danger')
     return redirect(url_for('billing.index'))
 
 
@@ -154,8 +158,9 @@ def bulk_charge():
             db.session.add(p)
             db.session.flush()
             if send_emails:
-                _send_payment_email(p)
-                p.email_sent = True
+                ok, _ = _send_payment_email(p)
+                if ok:
+                    p.email_sent = True
             count += 1
     db.session.commit()
     flash(f'Cobro masivo generado para {count} deportistas del grupo {group.name}.', 'success')
@@ -195,26 +200,67 @@ def _parse_date(s):
         return None
 
 
-def _send_payment_email(payment):
+def send_club_email(club, to, subject, body):
+    """
+    Envía un correo usando la cuenta del CLUB (configurada por el dueño en
+    Mi Club). Si el club no tiene correo propio, usa la configuración global
+    del servidor (variables de entorno) como respaldo.
+    Retorna (ok, motivo). Timeout de 10s: nunca cuelga el worker.
+    """
+    from flask import current_app
+
+    # 1. Elegir credenciales: club primero, global de respaldo
+    if club and club.mail_username and club.mail_password:
+        username = club.mail_username
+        password = club.mail_password
+        server   = club.mail_server or 'smtp.gmail.com'
+        port     = club.mail_port or 587
+        sender_name = club.name
+    elif current_app.config.get('MAIL_USERNAME') and current_app.config.get('MAIL_PASSWORD'):
+        username = current_app.config['MAIL_USERNAME']
+        password = current_app.config['MAIL_PASSWORD']
+        server   = current_app.config.get('MAIL_SERVER', 'smtp.gmail.com')
+        port     = current_app.config.get('MAIL_PORT', 587)
+        sender_name = 'SportManager'
+    else:
+        return False, ('El club no tiene correo configurado. El dueño puede '
+                       'configurarlo en "Mi Club" → Correo del Club.')
+
+    # 2. Enviar con smtplib directo (permite credenciales por club)
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.utils import formataddr
     try:
-        from flask_mail import Message
-        athlete = payment.athlete
-        if not athlete.email:
-            return False
-        msg = Message(
-            subject=f"Notificación de {'cobro' if payment.type=='cargo' else 'pago'}: {payment.concept}",
-            recipients=[athlete.email],
-            body=f"Estimado/a {athlete.full_name},\n\n"
-                 f"{'Se ha generado un cobro' if payment.type=='cargo' else 'Se ha registrado un pago'} "
-                 f"por ${payment.amount:,.0f} - {payment.concept}.\n\n"
-                 f"Estado: {payment.status}\n"
-                 f"Fecha: {payment.date}\n\n"
-                 f"Saludos,\nSportManager"
-        )
-        mail.send(msg)
-        return True
-    except Exception:
-        return False
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['Subject'] = subject
+        msg['From'] = formataddr((sender_name, username))
+        msg['To'] = to
+        with smtplib.SMTP(server, port, timeout=10) as s:
+            s.starttls()
+            s.login(username, password)
+            s.send_message(msg)
+        return True, ''
+    except smtplib.SMTPAuthenticationError:
+        return False, ('Credenciales rechazadas por el servidor. Verifica que '
+                       'sea una contraseña de aplicación de Gmail, no la normal.')
+    except Exception as e:
+        return False, f'Error al enviar: {type(e).__name__}'
+
+
+def _send_payment_email(payment):
+    """Notificación de cobro/pago al deportista, desde el correo del club."""
+    athlete = payment.athlete
+    if not athlete or not athlete.email:
+        return False, 'El deportista no tiene correo registrado.'
+    club = athlete.club
+    subject = f"Notificación de {'cobro' if payment.type=='cargo' else 'pago'}: {payment.concept}"
+    body = (f"Estimado/a {athlete.full_name},\n\n"
+            f"{'Se ha generado un cobro' if payment.type=='cargo' else 'Se ha registrado un pago'} "
+            f"por ${payment.amount:,.0f} - {payment.concept}.\n\n"
+            f"Estado: {payment.status}\n"
+            f"Fecha: {payment.date}\n\n"
+            f"Saludos,\n{club.name if club else 'SportManager'}")
+    return send_club_email(club, athlete.email, subject, body)
 
 
 def _generate_billing_pdf(payments):

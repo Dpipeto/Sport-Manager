@@ -168,6 +168,8 @@ def delete(id):
         flash('No tienes permiso para eliminar este usuario.', 'danger')
         return redirect(url_for('users.index'))
     name = user.name
+    from models import ActivityLog
+    ActivityLog.query.filter_by(user_id=user.id).update({'user_id': None})
     user.roles.clear()
     db.session.flush()
     db.session.delete(user)

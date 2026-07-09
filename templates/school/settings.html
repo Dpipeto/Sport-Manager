@@ -310,6 +310,89 @@
     </div>
   </div>
 </div>
+
+{% if club %}
+<!-- ═══ CORREO DEL CLUB ═══ -->
+<div class="row mt-4">
+<div class="col-lg-7">
+  <div class="card">
+    <div class="card-header py-3 d-flex align-items-center gap-2">
+      <i class="bi bi-envelope-at-fill text-primary"></i>
+      <span>Correo del Club</span>
+      {% if club.mail_username %}
+      <span class="badge badge-activo rounded-pill ms-auto">Configurado</span>
+      {% else %}
+      <span class="badge badge-pendiente rounded-pill ms-auto">Sin configurar</span>
+      {% endif %}
+    </div>
+    <div class="card-body p-4">
+      <p class="text-muted" style="font-size:13px;">
+        Las notificaciones de cobros y pagos a los deportistas se enviarán
+        <strong>desde esta cuenta</strong> — sea el dueño o recepción quien
+        presione el botón de enviar.
+      </p>
+      <form method="POST">
+        <input type="hidden" name="action" value="save_mail">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Cuenta de Gmail del club</label>
+          <input type="email" name="mail_username" class="form-control"
+                 value="{{ club.mail_username or '' }}"
+                 placeholder="miclub@gmail.com">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Contraseña de aplicación</label>
+          <input type="password" name="mail_password" class="form-control"
+                 placeholder="{{ '••••••••••••  (guardada — escribe solo para cambiarla)' if club.mail_password else 'xxxx xxxx xxxx xxxx' }}">
+          <div class="form-text">
+            NO es tu contraseña normal de Gmail. Genera una en
+            <a href="https://myaccount.google.com/apppasswords" target="_blank">
+              myaccount.google.com/apppasswords</a>
+            (requiere verificación en 2 pasos activa).
+          </div>
+        </div>
+        {% if club.mail_username %}
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" name="remove_mail" id="removeMail" value="1">
+          <label class="form-check-label text-danger" for="removeMail" style="font-size:13px;">
+            Eliminar configuración de correo
+          </label>
+        </div>
+        {% endif %}
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-save me-1"></i>Guardar correo
+          </button>
+        </div>
+      </form>
+      {% if club.mail_username and club.mail_password %}
+      <form method="POST" class="mt-2">
+        <input type="hidden" name="action" value="test_mail">
+        <button type="submit" class="btn btn-outline-success btn-sm">
+          <i class="bi bi-send me-1"></i>Enviar correo de prueba
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<div class="col-lg-5">
+  <div class="card h-100">
+    <div class="card-header py-3">
+      <i class="bi bi-question-circle text-primary me-2"></i>¿Cómo obtener la contraseña?
+    </div>
+    <div class="card-body" style="font-size:13px; color:#475569;">
+      <ol class="ps-3 mb-0">
+        <li class="mb-2">Entra a tu cuenta de Google del club</li>
+        <li class="mb-2">Activa la <strong>verificación en 2 pasos</strong> (Seguridad → Verificación en 2 pasos)</li>
+        <li class="mb-2">Ve a <strong>myaccount.google.com/apppasswords</strong></li>
+        <li class="mb-2">Crea una contraseña con nombre "SportManager"</li>
+        <li>Copia el código de 16 letras y pégalo aquí</li>
+      </ol>
+    </div>
+  </div>
+</div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

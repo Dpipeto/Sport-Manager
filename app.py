@@ -18,6 +18,23 @@ def _migrate_columns(db):
     (las instalaciones Postgres parten de cero o usan Flask-Migrate).
     """
     import sqlalchemy as sa
+
+    # ── PostgreSQL: agregar columnas nuevas a tablas existentes ─────────────
+    if db.engine.dialect.name == 'postgresql':
+        with db.engine.connect() as conn:
+            for stmt in [
+                "ALTER TABLE clubs ADD COLUMN IF NOT EXISTS mail_username VARCHAR(150)",
+                "ALTER TABLE clubs ADD COLUMN IF NOT EXISTS mail_password VARCHAR(150)",
+                "ALTER TABLE clubs ADD COLUMN IF NOT EXISTS mail_server VARCHAR(100) DEFAULT 'smtp.gmail.com'",
+                "ALTER TABLE clubs ADD COLUMN IF NOT EXISTS mail_port INTEGER DEFAULT 587",
+            ]:
+                try:
+                    conn.execute(sa.text(stmt))
+                except Exception:
+                    pass
+            conn.commit()
+        return
+
     if db.engine.dialect.name != 'sqlite':
         return
     with db.engine.connect() as conn:
@@ -59,6 +76,10 @@ def _migrate_columns(db):
             for col, typedef in [
                 ('sms_api_key', 'VARCHAR(64)'),
                 ('ntfy_topic',  'VARCHAR(100)'),
+                ('mail_username', 'VARCHAR(150)'),
+                ('mail_password', 'VARCHAR(150)'),
+                ('mail_server', "VARCHAR(100) DEFAULT 'smtp.gmail.com'"),
+                ('mail_port', 'INTEGER DEFAULT 587'),
             ]:
                 if col not in cols:
                     conn.execute(sa.text(f"ALTER TABLE clubs ADD COLUMN {col} {typedef}"))

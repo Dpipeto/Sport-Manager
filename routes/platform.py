@@ -113,10 +113,28 @@ def toggle_club_status(id):
 def delete_club(id):
     club = Club.query.get_or_404(id)
     name = club.name
-    # Eliminar usuarios del club (sus roles primero)
-    for u in club.users:
+    from models import Athlete, Group, Venue, BankTransaction
+
+    # Orden de eliminación respetando llaves foráneas (PostgreSQL las valida):
+    # 1. Transacciones bancarias del club
+    BankTransaction.query.filter_by(club_id=club.id).delete()
+    # 2. Deportistas — el ORM cascada pagos, documentos, valoraciones,
+    #    lesiones y grupos de cada uno (cascade='all, delete-orphan')
+    for athlete in Athlete.query.filter_by(club_id=club.id).all():
+        db.session.delete(athlete)
+    db.session.flush()
+    # 3. Grupos y sedes
+    Group.query.filter_by(club_id=club.id).delete()
+    Venue.query.filter_by(club_id=club.id).delete()
+    # 4. Usuarios del club (desvinculando sus logs y roles)
+    for u in list(club.users):
+        ActivityLog.query.filter_by(user_id=u.id).update({'user_id': None})
         u.roles.clear()
         db.session.delete(u)
+    db.session.flush()
+    # 5. Logs que referencian al club
+    ActivityLog.query.filter_by(club_id=club.id).update({'club_id': None})
+    # 6. El club
     db.session.delete(club)
     db.session.commit()
     log_activity('Club eliminado', f'Club: {name}', user=current_user)
@@ -281,6 +299,8 @@ def delete_owner(id):
         return redirect(url_for('platform.owners'))
     name = owner.name
     db.session.expire_all()
+    # Desvincular registros que referencian al usuario (FK en PostgreSQL)
+    ActivityLog.query.filter_by(user_id=owner.id).update({'user_id': None})
     owner.roles.clear()
     db.session.flush()
     db.session.delete(owner)
