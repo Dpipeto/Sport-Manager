@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Valoración{% endblock %}
+{% block page_title %}Nueva Valoración — {{ athlete.full_name }}{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('assessments.athlete_assessments', athlete_id=athlete.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+{% endblock %}
+
+{% block content %}
+<div class="card mb-3" style="background:#dbeafe;border:none;">
+  <div class="card-body py-2 d-flex align-items-center gap-3">
+    <div class="athlete-avatar" style="width:40px;height:40px;font-size:15px;">{{ athlete.first_name[0] }}{{ athlete.last_name[0] }}</div>
+    <strong>{{ athlete.full_name }}</strong>
+  </div>
+</div>
+
+<form method="POST">
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header p-3"><i class="bi bi-info-circle me-2 text-primary"></i>General</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Fecha</label>
+          <input type="date" name="date" class="form-control" value="{{ assessment.date.isoformat() if assessment and assessment.date else '' }}">
+        </div>
+        <div>
+          <label class="form-label">Tipo</label>
+          <select name="type" class="form-select">
+            <option value="inicial">Valoración Inicial</option>
+            <option value="seguimiento">Seguimiento</option>
+            <option value="final">Final</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header p-3"><i class="bi bi-sticky me-2 text-warning"></i>Notas</div>
+      <div class="card-body">
+        <textarea name="notes" class="form-control" rows="5" placeholder="Observaciones...">{{ assessment.notes if assessment else '' }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <!-- Anthropometric -->
+    <div class="card mb-4">
+      <div class="card-header p-3"><i class="bi bi-rulers me-2 text-primary"></i>Valoración Antropométrica</div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% set anthro_fields = [('weight','Peso (kg)','number'),('height','Talla (cm)','number'),('body_fat','% Grasa','number'),('muscle_mass','Masa Muscular (kg)','number'),('waist','Cintura (cm)','number'),('hip','Cadera (cm)','number'),('chest','Pecho (cm)','number')] %}
+          {% for name, label, ftype in anthro_fields %}
+          <div class="col-sm-4">
+            <label class="form-label" style="font-size:12px;">{{ label }}</label>
+            <input type="{{ ftype }}" name="{{ name }}" step="0.1" class="form-control form-control-sm"
+                   value="{{ assessment[name] if assessment and assessment[name] else '' }}">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Motor Tests -->
+    <div class="card mb-4">
+      <div class="card-header p-3"><i class="bi bi-lightning me-2 text-success"></i>Pruebas Motoras</div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% set motor_fields = [('flexibility','Flexibilidad (cm)'),('strength','Fuerza (kg)'),('resistance','Resistencia (m)'),('speed','Velocidad (seg)'),('coordination','Coordinación (pts)')] %}
+          {% for name, label in motor_fields %}
+          <div class="col-sm-4">
+            <label class="form-label" style="font-size:12px;">{{ label }}</label>
+            <input type="number" name="{{ name }}" step="0.1" class="form-control form-control-sm"
+                   value="{{ assessment[name] if assessment and assessment[name] else '' }}">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Functional Capacity -->
+    <div class="card">
+      <div class="card-header p-3"><i class="bi bi-heart-pulse me-2 text-danger"></i>Capacidad Funcional</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <label class="form-label" style="font-size:12px;">VO₂ Max (ml/kg/min)</label>
+            <input type="number" name="vo2_max" step="0.1" class="form-control form-control-sm">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label" style="font-size:12px;">FC Reposo (bpm)</label>
+            <input type="number" name="resting_hr" class="form-control form-control-sm">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label" style="font-size:12px;">FC Máxima (bpm)</label>
+            <input type="number" name="max_hr" class="form-control form-control-sm">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label" style="font-size:12px;">PA Sistólica (mmHg)</label>
+            <input type="number" name="blood_pressure_sys" class="form-control form-control-sm">
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label" style="font-size:12px;">PA Diastólica (mmHg)</label>
+            <input type="number" name="blood_pressure_dia" class="form-control form-control-sm">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex justify-content-end gap-2 mt-4">
+  <a href="{{ url_for('assessments.athlete_assessments', athlete_id=athlete.id) }}" class="btn btn-outline-secondary">Cancelar</a>
+  <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-circle me-2"></i>Guardar Valoración</button>
+</div>
+</form>
+{% endblock %}

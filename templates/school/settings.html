@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+{% block title %}Mi Escuela{% endblock %}
+{% block page_title %}Mi Escuela{% endblock %}
+
+{% block extra_css %}
+<style>
+.logo-preview {
+  width: 120px; height: 120px; border-radius: 16px;
+  object-fit: contain; background: #f8fafc;
+  border: 2px dashed #e2e8f0; padding: 8px;
+}
+.logo-placeholder {
+  width: 120px; height: 120px; border-radius: 16px;
+  background: linear-gradient(135deg,#e8f0fe,#f1f5f9);
+  border: 2px dashed #c7d7f8;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:6px; color:#94a3b8;
+}
+.color-swatch {
+  width:36px; height:36px; border-radius:8px; border:2px solid #e2e8f0;
+  cursor:pointer; display:inline-block;
+}
+.preview-sidebar {
+  background: #0f172a; border-radius: 16px; padding: 0; overflow: hidden;
+  width: 240px; flex-shrink: 0;
+}
+.preview-brand {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  display:flex; align-items:center; gap:10px;
+}
+.preview-brand .p-logo {
+  width:38px; height:38px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; color:white; flex-shrink:0; overflow:hidden;
+}
+.preview-brand .p-logo img { width:100%; height:100%; object-fit:contain; }
+.preview-brand .p-text .p-name { font-family:'Syne',sans-serif; font-weight:800; color:white; font-size:14px; line-height:1.2; }
+.preview-brand .p-text .p-school { font-size:11px; color:#64748b; margin-top:2px; font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; }
+.preview-brand .p-text .p-sub { font-size:10px; color:#475569; }
+.preview-nav { padding: 10px 0; }
+.preview-nav .pn-item {
+  display:flex; align-items:center; gap:8px; padding:9px 16px;
+  color:#64748b; font-size:12px;
+}
+.preview-nav .pn-item.active { color:white; background:rgba(255,255,255,.06); border-left:3px solid var(--p-color,#1a56db); }
+.preview-nav .pn-item i { font-size:15px; width:16px; }
+.preview-content { background:#f1f5f9; padding:12px; border-radius:0 0 16px 16px; }
+.preview-btn {
+  display:inline-block; padding:6px 14px; border-radius:8px;
+  font-size:12px; font-weight:600; color:white; border:none;
+  background: var(--prev-color, #1a56db);
+}
+.preview-card {
+  background:white; border-radius:10px; padding:10px 12px;
+  margin-bottom:8px; display:flex; align-items:center; gap:10px;
+  border:1px solid #e2e8f0;
+}
+.preview-card .pc-icon {
+  width:32px; height:32px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; color:white;
+  background: var(--prev-color, #1a56db);
+}
+.preview-card .pc-val { font-size:15px; font-weight:800; color:#0f172a; font-family:"Syne",sans-serif; }
+.preview-card .pc-lbl { font-size:10px; color:#64748b; }
+.preview-input {
+  width:100%; padding:5px 9px; border-radius:7px; font-size:11px;
+  border:2px solid var(--prev-color, #1a56db);
+  outline:none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--prev-color,#1a56db) 18%, transparent);
+}
+.color-section-title { font-size:12px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.06em; color:#64748b; margin-bottom:10px; }
+.color-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.color-row label { font-size:13px; font-weight:500; min-width:160px; }
+.color-row input[type=color] { width:44px; height:38px; border-radius:8px; padding:3px;
+  border:1px solid #e2e8f0; cursor:pointer; }
+.color-swatch-sm { width:28px; height:28px; border-radius:6px; border:1px solid #e2e8f0;
+  cursor:pointer; display:inline-block; flex-shrink:0; }
+.reset-btn { font-size:11px; color:#94a3b8; cursor:pointer; text-decoration:underline; border:none; background:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <div>
+    <h2><i class="bi bi-buildings-fill me-2 text-primary"></i>Perfil de Mi Escuela</h2>
+    <p class="text-muted mb-0" style="font-size:14px">
+      Personaliza el logo y nombre de tu escuela deportiva. 
+      Aparecerá en el menú lateral de la plataforma.
+    </p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- FORM -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header py-3 d-flex align-items-center gap-2">
+        <i class="bi bi-pencil-square text-primary"></i>
+        <span>Datos de la Escuela</span>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" enctype="multipart/form-data" id="schoolForm">
+
+          <!-- Logo upload -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Logo de la Escuela</label>
+            <div class="d-flex align-items-start gap-3 flex-wrap">
+              <div id="logoPreviewWrap">
+                {% if current_user.school_logo %}
+                  <img id="logoPreviewImg"
+                       src="{{ media_url(current_user.school_logo, 'schools') }}"
+                       class="logo-preview">
+                {% else %}
+                  <div class="logo-placeholder" id="logoPlaceholder">
+                    <i class="bi bi-image" style="font-size:28px"></i>
+                    <span style="font-size:11px">Sin logo</span>
+                  </div>
+                  <img id="logoPreviewImg" class="logo-preview d-none">
+                {% endif %}
+              </div>
+              <div>
+                <input type="file" class="form-control mb-2" id="logoInput" name="school_logo"
+                       accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                       style="max-width:280px">
+                <div class="text-muted" style="font-size:12px">PNG, JPG, SVG · máx. 2 MB</div>
+                {% if current_user.school_logo %}
+                <div class="form-check mt-2">
+                  <input class="form-check-input" type="checkbox" name="remove_logo" id="removeLogo" value="1">
+                  <label class="form-check-label text-danger" for="removeLogo" style="font-size:13px">
+                    Eliminar logo actual
+                  </label>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- School name -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="schoolName">
+              Nombre de la Escuela
+            </label>
+            <input type="text" class="form-control" id="schoolName" name="school_name"
+                   value="{{ current_user.school_name or '' }}"
+                   placeholder="Ej: Academia Deportiva Bogotá"
+                   maxlength="150">
+            <div class="form-text">Aparecerá debajo de "SPORTMANAGER" en el menú lateral.</div>
+          </div>
+
+          <!-- Color -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Color Principal</label>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+              <input type="color" class="form-control form-control-color" id="colorPicker"
+                     name="school_color"
+                     value="{{ current_user.school_color or '#1a56db' }}"
+                     style="width:52px; height:44px; padding:4px; border-radius:10px;">
+              <div class="d-flex gap-2 flex-wrap" id="colorSwatches">
+                {% for col in ['#1a56db','#7c3aed','#059669','#dc2626','#d97706','#0891b2','#be185d','#0f172a'] %}
+                <div class="color-swatch" style="background:{{ col }}"
+                     onclick="document.getElementById('colorPicker').value='{{ col }}'; updatePreview();"
+                     title="{{ col }}"></div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="form-text">Se usará como color de acento en tu sesión.</div>
+          </div>
+
+          <!-- ── COLORES DE INTERFAZ ─────────────────────────── -->
+          <hr class="my-4">
+          <div class="color-section-title">
+            <i class="bi bi-palette-fill me-1"></i>Colores de la Interfaz
+          </div>
+          <p class="text-muted mb-3" style="font-size:12px;">
+            Personaliza los colores del menú lateral, barra superior y fondo de página.
+          </p>
+
+          <!-- Color primario -->
+          <div class="color-row">
+            <label><i class="bi bi-circle-fill me-1" style="color:var(--primary)"></i>Color primario</label>
+            <input type="color" id="colorPicker2" name="school_color"
+                   value="{{ current_user.school_color or '#1a56db' }}">
+            <div class="d-flex gap-1 flex-wrap">
+              {% for col in ['#1a56db','#7c3aed','#059669','#dc2626','#d97706','#0891b2','#be185d','#0f172a'] %}
+              <div class="color-swatch-sm" style="background:{{ col }}"
+                   onclick="setColor('colorPicker2','school_color','{{ col }}'); updatePreview();"></div>
+              {% endfor %}
+            </div>
+            <button type="button" class="reset-btn" onclick="setColor('colorPicker2','school_color','#1a56db'); updatePreview();">reset</button>
+          </div>
+
+          <!-- Fondo del menú -->
+          <div class="color-row">
+            <label><i class="bi bi-layout-sidebar me-1"></i>Fondo del menú</label>
+            <input type="color" id="pickerSidebar" name="color_sidebar_bg"
+                   value="{{ current_user.color_sidebar_bg or '#0f172a' }}"
+                   oninput="updatePreviewSidebar()">
+            <div class="d-flex gap-1 flex-wrap">
+              {% for col in ['#0f172a','#1e293b','#1a1a2e','#0d1117','#18181b','#1c1917','#1a1a1a','#2d1b69'] %}
+              <div class="color-swatch-sm" style="background:{{ col }}"
+                   onclick="setColor('pickerSidebar','color_sidebar_bg','{{ col }}'); updatePreviewSidebar();"></div>
+              {% endfor %}
+            </div>
+            <button type="button" class="reset-btn" onclick="setColor('pickerSidebar','color_sidebar_bg','#0f172a'); updatePreviewSidebar();">reset</button>
+          </div>
+
+          <!-- Fondo de la página -->
+          <div class="color-row">
+            <label><i class="bi bi-layout-text-window me-1"></i>Fondo de página</label>
+            <input type="color" id="pickerBody" name="color_body_bg"
+                   value="{{ current_user.color_body_bg or '#f1f5f9' }}"
+                   oninput="updatePreviewBody()">
+            <div class="d-flex gap-1 flex-wrap">
+              {% for col in ['#f1f5f9','#f8fafc','#f0fdf4','#fef9f0','#fdf4ff','#f0f4ff','#ffffff','#0f172a'] %}
+              <div class="color-swatch-sm" style="background:{{ col }}"
+                   onclick="setColor('pickerBody','color_body_bg','{{ col }}'); updatePreviewBody();"></div>
+              {% endfor %}
+            </div>
+            <button type="button" class="reset-btn" onclick="setColor('pickerBody','color_body_bg','#f1f5f9'); updatePreviewBody();">reset</button>
+          </div>
+
+          <!-- Barra superior -->
+          <div class="color-row">
+            <label><i class="bi bi-layout-text-window-reverse me-1"></i>Barra superior</label>
+            <input type="color" id="pickerTopbar" name="color_topbar_bg"
+                   value="{{ current_user.color_topbar_bg or '#ffffff' }}"
+                   oninput="updatePreviewTopbar()">
+            <div class="d-flex gap-1 flex-wrap">
+              {% for col in ['#ffffff','#f8fafc','#f1f5f9','#0f172a','#1e293b','#1a56db','#7c3aed','#059669'] %}
+              <div class="color-swatch-sm" style="background:{{ col }}"
+                   onclick="setColor('pickerTopbar','color_topbar_bg','{{ col }}'); updatePreviewTopbar();"></div>
+              {% endfor %}
+            </div>
+            <button type="button" class="reset-btn" onclick="setColor('pickerTopbar','color_topbar_bg','#ffffff'); updatePreviewTopbar();">reset</button>
+          </div>
+
+          <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>Guardar cambios
+            </button>
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header py-3 d-flex align-items-center gap-2">
+        <i class="bi bi-eye text-primary"></i><span>Vista previa del menú</span>
+      </div>
+      <div class="card-body d-flex justify-content-center py-4">
+        <div class="preview-sidebar">
+          <div class="preview-brand">
+            <div class="p-logo" id="prevLogo"
+                 style="background:{{ current_user.school_color or '#1a56db' }}">
+              {% if current_user.school_logo %}
+                <img src="{{ media_url(current_user.school_logo, 'schools') }}"
+                     id="prevLogoImg">
+              {% else %}
+                <i class="bi bi-trophy-fill" id="prevLogoIcon"></i>
+              {% endif %}
+            </div>
+            <div class="p-text">
+              <div class="p-name" id="prevSchoolName" style="font-size:13px;">{{ current_user.school_name or 'Nombre Escuela' }}</div>
+              <div class="p-sub" style="font-size:10px; color:#475569; letter-spacing:.04em;">SPORTMANAGER</div>
+            </div>
+          </div>
+          <div class="preview-nav">
+            <div class="pn-item active" id="prevNavActive"
+                 style="border-left-color: {{ current_user.school_color or '#1a56db' }}">
+              <i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span>
+            </div>
+            <div class="pn-item"><i class="bi bi-people-fill"></i><span>Deportistas</span></div>
+            <div class="pn-item"><i class="bi bi-credit-card-fill"></i><span>Cobros</span></div>
+          </div>
+        </div>
+        <!-- Content preview -->
+        <div class="preview-content" id="prevContent"
+             style="--prev-color: {{ current_user.school_color or '#1a56db' }}">
+          <div class="preview-card">
+            <div class="pc-icon"><i class="bi bi-people-fill"></i></div>
+            <div><div class="pc-val">24</div><div class="pc-lbl">Deportistas</div></div>
+          </div>
+          <div class="preview-card">
+            <div class="pc-icon"><i class="bi bi-credit-card-fill"></i></div>
+            <div><div class="pc-val">.2M</div><div class="pc-lbl">Ingresos</div></div>
+          </div>
+          <input class="preview-input" readonly value="Buscar deportista..." id="prevInput">
+          <div style="margin-top:8px">
+            <button class="preview-btn" id="prevBtn">+ Nuevo</button>
+          </div>
+        </div>
+      </div>
+      {% if current_user.school_name or current_user.school_logo %}
+      <div class="card-footer text-center" style="font-size:12px; color:#64748b">
+        <i class="bi bi-check-circle-fill text-success me-1"></i>
+        Tu escuela está configurada
+      </div>
+      {% else %}
+      <div class="card-footer text-center" style="font-size:12px; color:#94a3b8">
+        <i class="bi bi-info-circle me-1"></i>
+        Configura tu escuela para personalizar el menú
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const nameInput     = document.getElementById('schoolName');
+const colorPicker   = document.getElementById('colorPicker');
+const logoInput     = document.getElementById('logoInput');
+const prevSchool    = document.getElementById('prevSchoolName');
+const prevLogo      = document.getElementById('prevLogo');
+const prevNavActive = document.getElementById('prevNavActive');
+
+function setColor(inputId, hiddenName, val) {
+  document.getElementById(inputId).value = val;
+  // also update any hidden input with same name if exists
+}
+
+function updatePreview() {
+  const name  = nameInput.value.trim();
+  const color = colorPicker.value;
+  prevSchool.textContent = name || 'Nombre Escuela';
+  prevLogo.style.background = color;
+  prevNavActive.style.borderLeftColor = color;
+  const prevContent = document.getElementById('prevContent');
+  if (prevContent) prevContent.style.setProperty('--prev-color', color);
+  // Sync both color pickers
+  const cp2 = document.getElementById('colorPicker2');
+  if (cp2) { cp2.value = color; }
+}
+
+function syncPickers() {
+  // Keep colorPicker and colorPicker2 in sync
+  const cp1 = document.getElementById('colorPicker');
+  const cp2 = document.getElementById('colorPicker2');
+  if (cp1 && cp2) {
+    cp2.addEventListener('input', () => { cp1.value = cp2.value; updatePreview(); });
+    cp1.addEventListener('input', () => { cp2.value = cp1.value; });
+  }
+}
+
+function updatePreviewSidebar() {
+  const color = document.getElementById('pickerSidebar').value;
+  const sidebar = document.querySelector('.preview-sidebar');
+  if (sidebar) sidebar.style.background = color;
+}
+
+function updatePreviewBody() {
+  const color = document.getElementById('pickerBody').value;
+  const content = document.getElementById('prevContent');
+  if (content) content.style.background = color;
+}
+
+function updatePreviewTopbar() {
+  // No topbar in current preview, just visual feedback
+}
+
+nameInput.addEventListener('input', updatePreview);
+colorPicker.addEventListener('input', updatePreview);
+document.addEventListener('DOMContentLoaded', syncPickers);
+
+// Logo file preview
+logoInput.addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    let img = document.getElementById('logoPreviewImg');
+    let placeholder = document.getElementById('logoPlaceholder');
+    if (placeholder) placeholder.style.display = 'none';
+    img.src = e.target.result;
+    img.classList.remove('d-none');
+
+    // update preview sidebar
+    let prevImg = document.getElementById('prevLogoImg');
+    let prevIcon = document.getElementById('prevLogoIcon');
+    if (!prevImg) {
+      prevImg = document.createElement('img');
+      prevImg.id = 'prevLogoImg';
+      prevImg.style.width = '100%';
+      prevImg.style.height = '100%';
+      prevImg.style.objectFit = 'contain';
+      if (prevIcon) prevIcon.replaceWith(prevImg);
+      else prevLogo.appendChild(prevImg);
+    }
+    prevImg.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+</script>
+{% endblock %}

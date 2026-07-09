@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Configuración SMS{% endblock %}
+{% block page_title %}Pagos Automáticos por SMS{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('bank.index') }}" class="btn btn-sm btn-outline-secondary">
+  <i class="bi bi-arrow-left me-1"></i>Volver
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Configuración -->
+  <div class="col-lg-6">
+
+    <!-- API Key -->
+    <div class="card mb-4">
+      <div class="card-header p-3">
+        <i class="bi bi-key-fill me-2 text-primary"></i>Webhook de SMS Bancarios
+      </div>
+      <div class="card-body p-4">
+        {% if club.sms_api_key %}
+        <label class="form-label fw-semibold">URL del webhook (cópiala en tu app de reenvío)</label>
+        <div class="input-group mb-3">
+          <input type="text" class="form-control" readonly id="webhookUrl"
+                 value="{{ request.url_root }}api/sms/{{ club.sms_api_key }}">
+          <button class="btn btn-outline-primary" onclick="copyUrl()">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </div>
+        <div class="d-flex gap-2">
+          <form method="POST" class="d-inline">
+            <input type="hidden" name="action" value="generate_key">
+            <button class="btn btn-outline-warning btn-sm"
+                    onclick="return confirm('Al regenerar la key, la anterior dejará de funcionar. ¿Continuar?')">
+              <i class="bi bi-arrow-repeat me-1"></i>Regenerar
+            </button>
+          </form>
+          <form method="POST" class="d-inline">
+            <input type="hidden" name="action" value="revoke_key">
+            <button class="btn btn-outline-danger btn-sm"
+                    onclick="return confirm('¿Desactivar el webhook de SMS?')">
+              <i class="bi bi-x-circle me-1"></i>Desactivar
+            </button>
+          </form>
+        </div>
+        {% else %}
+        <p class="text-muted" style="font-size:14px;">
+          Genera tu clave privada para activar el registro automático de pagos por SMS.
+        </p>
+        <form method="POST">
+          <input type="hidden" name="action" value="generate_key">
+          <button class="btn btn-primary">
+            <i class="bi bi-key me-2"></i>Generar API Key
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Notificaciones push -->
+    <div class="card">
+      <div class="card-header p-3">
+        <i class="bi bi-bell-fill me-2 text-primary"></i>Notificaciones al Celular
+      </div>
+      <div class="card-body p-4">
+        <p class="text-muted" style="font-size:13px;">
+          Recibe una notificación push cuando llegue un pago por SMS.
+          Instala la app gratuita <strong>ntfy</strong>
+          (<a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank">Android</a> ·
+          <a href="https://apps.apple.com/app/ntfy/id1625396347" target="_blank">iPhone</a>)
+          y suscríbete a tu tema privado.
+        </p>
+        <form method="POST">
+          <label class="form-label fw-semibold">Tu tema privado</label>
+          <div class="input-group mb-2">
+            <span class="input-group-text" style="font-size:12px;">ntfy.sh/</span>
+            <input type="text" name="ntfy_topic" class="form-control"
+                   value="{{ club.ntfy_topic or '' }}"
+                   placeholder="genera uno o escribe el tuyo">
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" name="action" value="save_ntfy" class="btn btn-primary btn-sm">
+              <i class="bi bi-save me-1"></i>Guardar
+            </button>
+            <button type="submit" name="action" value="generate_ntfy" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-shuffle me-1"></i>Generar aleatorio
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guía de instalación -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header p-3">
+        <i class="bi bi-book me-2 text-primary"></i>Guía de instalación (5 minutos)
+      </div>
+      <div class="card-body p-4">
+        <div class="d-flex gap-3 mb-4">
+          <div class="athlete-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0;">1</div>
+          <div>
+            <div style="font-weight:600;font-size:14px;">Instala una app de reenvío de SMS</div>
+            <div style="font-size:13px;color:#64748b;">
+              En el celular donde llegan los SMS del banco, instala
+              <strong>"SMS Forwarder"</strong> (gratuita en Play Store) o similar.
+            </div>
+          </div>
+        </div>
+        <div class="d-flex gap-3 mb-4">
+          <div class="athlete-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0;">2</div>
+          <div>
+            <div style="font-weight:600;font-size:14px;">Crea una regla de reenvío</div>
+            <div style="font-size:13px;color:#64748b;">
+              Filtra por remitente: <strong>Nequi (85954), Bancolombia (85540, 87400), Davivienda</strong>.
+              Como destino elige <strong>"Webhook / URL"</strong> con método <strong>POST</strong>.
+            </div>
+          </div>
+        </div>
+        <div class="d-flex gap-3 mb-4">
+          <div class="athlete-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0;">3</div>
+          <div>
+            <div style="font-weight:600;font-size:14px;">Pega tu URL del webhook</div>
+            <div style="font-size:13px;color:#64748b;">
+              Usa la URL generada arriba. El cuerpo puede ser JSON
+              <code style="font-size:11px;">{"message":"%text%"}</code>
+              o texto plano — el sistema acepta ambos.
+            </div>
+          </div>
+        </div>
+        <div class="d-flex gap-3 mb-4">
+          <div class="athlete-avatar" style="width:32px;height:32px;font-size:14px;flex-shrink:0;">4</div>
+          <div>
+            <div style="font-weight:600;font-size:14px;">Listo — confirma los pagos</div>
+            <div style="font-size:13px;color:#64748b;">
+              Cada transferencia recibida aparecerá en
+              <a href="{{ url_for('bank.index') }}">Transacciones Bancarias</a> como pendiente.
+              Vincúlala al deportista y confírmala: el pago se registra automáticamente.
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-info mb-0" style="font-size:12px;">
+          <i class="bi bi-shield-lock me-1"></i>
+          <strong>Seguridad:</strong> solo los SMS de <em>ingresos</em> se registran.
+          La API key es privada — si sospechas que alguien la conoce, regenérala.
+          Nada se confirma automáticamente: siempre requiere revisión humana.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyUrl() {
+  const input = document.getElementById('webhookUrl');
+  input.select();
+  navigator.clipboard.writeText(input.value);
+  alert('URL copiada al portapapeles');
+}
+</script>
+{% endblock %}

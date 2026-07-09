@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block page_title %}Usuarios del Sistema{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('platform.export_users') }}" class="btn btn-sm btn-outline-success">
+  <i class="bi bi-download me-1"></i>Exportar CSV
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="alert alert-info" style="font-size:13px;">
+  <i class="bi bi-shield-lock me-2"></i>
+  Vista global de solo lectura. Los datos internos de cada club (deportistas, pagos)
+  son privados y solo accesibles por su dueño.
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="table-light">
+          <tr><th>Usuario</th><th>Roles</th><th>Club</th><th>Estado</th><th>Registrado</th></tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td style="font-size:14px;font-weight:600;">{{ u.name }}</td>
+            <td style="font-size:13px;">{{ u.roles_display }}</td>
+            <td style="font-size:13px;">{{ u.club.name if u.club else '—' }}</td>
+            <td><span class="badge {{ 'badge-activo' if u.active else 'badge-inactivo' }} rounded-pill">
+              {{ 'Activo' if u.active else 'Inactivo' }}</span></td>
+            <td style="font-size:12px;">{{ u.created_at.strftime('%d/%m/%Y') if u.created_at }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

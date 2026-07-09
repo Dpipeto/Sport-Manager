@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro — SportManager</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --primary: #1a56db; }
+  body { font-family:'DM Sans',sans-serif; background:#0f172a; min-height:100vh;
+         display:flex; align-items:center; justify-content:center; }
+  h1,h2 { font-family:'Syne',sans-serif; }
+  .auth-wrapper { width:100%; max-width:460px; padding:20px; }
+  .auth-logo { text-align:center; margin-bottom:28px; }
+  .auth-logo .logo-icon { width:56px; height:56px; background:var(--primary); border-radius:15px;
+    display:inline-flex; align-items:center; justify-content:center; font-size:26px; color:white;
+    margin-bottom:10px; box-shadow:0 0 30px rgba(26,86,219,.4); }
+  .auth-logo h1 { font-weight:800; color:white; font-size:24px; margin:0; }
+  .auth-card { background:#1e293b; border-radius:20px; padding:36px;
+    border:1px solid rgba(255,255,255,.06); box-shadow:0 20px 60px rgba(0,0,0,.4); }
+  .auth-card h2 { color:white; font-size:20px; font-weight:700; margin-bottom:6px; }
+  .subtitle { color:#94a3b8; font-size:14px; margin-bottom:24px; }
+  .form-label { color:#cbd5e1; font-size:13px; font-weight:500; }
+  .form-control { background:#0f172a; border:1px solid #334155; color:white;
+    border-radius:10px; padding:11px 14px; transition:all .2s; }
+  .form-control:focus { background:#0f172a; border-color:var(--primary); color:white;
+    box-shadow:0 0 0 3px rgba(26,86,219,.2); }
+  .form-control::placeholder { color:#475569; }
+  .input-group .input-group-text { background:#0f172a; border-color:#334155; color:#94a3b8;
+    border-radius:10px 0 0 10px; cursor:pointer; }
+  .input-group .form-control { border-radius:0 10px 10px 0; }
+  .btn-register { background:var(--primary); color:white; border:none; width:100%;
+    padding:13px; border-radius:10px; font-weight:600; font-size:15px; transition:all .2s; cursor:pointer; }
+  .btn-register:hover { background:#0e3a8a; transform:translateY(-1px); }
+  .btn-register:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+  .auth-footer { text-align:center; margin-top:18px; color:#64748b; font-size:14px; }
+  .auth-footer a { color:var(--primary); text-decoration:none; font-weight:600; }
+  .alert { border-radius:10px; border:none; font-size:13px; }
+
+  /* Password strength */
+  .strength-bar { height:4px; border-radius:4px; background:#1e293b;
+    margin-top:8px; overflow:hidden; }
+  .strength-fill { height:100%; border-radius:4px; width:0; transition:width .3s, background .3s; }
+  .rules-list { margin-top:10px; padding:0; list-style:none; }
+  .rules-list li { font-size:12px; color:#64748b; display:flex;
+    align-items:center; gap:6px; margin-bottom:4px; transition:color .2s; }
+  .rules-list li.ok { color:#10b981; }
+  .rules-list li i { font-size:13px; }
+</style>
+</head>
+<body>
+<div class="auth-wrapper">
+  <div class="auth-logo">
+    <div class="logo-icon"><i class="bi bi-trophy-fill"></i></div>
+    <h1>SportManager</h1>
+  </div>
+  <div class="auth-card">
+    <h2>Crear cuenta</h2>
+    <p class="subtitle">Regístrate para acceder al sistema</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="alert alert-{{ cat }} mb-3">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ msg }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" id="registerForm">
+      <div class="mb-3">
+        <label class="form-label">Nombre completo</label>
+        <input type="text" name="name" class="form-control"
+               placeholder="Tu nombre completo" required maxlength="100">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" name="email" class="form-control"
+               placeholder="correo@ejemplo.com" required maxlength="120">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Contraseña</label>
+        <div class="input-group">
+          <input type="password" name="password" id="password" class="form-control"
+                 placeholder="Crea tu contraseña" required maxlength="128" autocomplete="new-password">
+          <span class="input-group-text" onclick="togglePass('password', this)">
+            <i class="bi bi-eye"></i>
+          </span>
+        </div>
+        <!-- Barra de fuerza -->
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <!-- Reglas -->
+        <ul class="rules-list" id="rulesList">
+          <li id="r-length"><i class="bi bi-circle"></i>Mínimo 8 caracteres</li>
+          <li id="r-upper"><i class="bi bi-circle"></i>Una letra mayúscula (A-Z)</li>
+          <li id="r-digit"><i class="bi bi-circle"></i>Un número (0-9)</li>
+          <li id="r-special"><i class="bi bi-circle"></i>Un carácter especial: . , # $ % &amp; /</li>
+        </ul>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Confirmar contraseña</label>
+        <div class="input-group">
+          <input type="password" name="confirm_password" id="confirm" class="form-control"
+                 placeholder="Repite tu contraseña" required maxlength="128" autocomplete="new-password">
+          <span class="input-group-text" onclick="togglePass('confirm', this)">
+            <i class="bi bi-eye"></i>
+          </span>
+        </div>
+        <div id="matchMsg" style="font-size:12px; margin-top:6px;"></div>
+      </div>
+      <button type="submit" class="btn-register" id="submitBtn">
+        <i class="bi bi-person-plus me-2"></i>Registrarse
+      </button>
+    </form>
+  </div>
+  <div class="auth-footer">
+    ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión</a>
+  </div>
+</div>
+
+<script>
+const SPECIAL = new Set(['.', ',', '#', '$', '%', '&', '/']);
+
+function togglePass(fieldId, btn) {
+  const f = document.getElementById(fieldId);
+  const icon = btn.querySelector('i');
+  if (f.type === 'password') { f.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+  else { f.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+
+function check(id, ok) {
+  const li = document.getElementById(id);
+  const icon = li.querySelector('i');
+  if (ok) {
+    li.classList.add('ok');
+    icon.className = 'bi bi-check-circle-fill';
+  } else {
+    li.classList.remove('ok');
+    icon.className = 'bi bi-circle';
+  }
+  return ok;
+}
+
+function updateStrength() {
+  const pw = document.getElementById('password').value;
+  const r = {
+    length:  pw.length >= 8,
+    upper:   /[A-Z]/.test(pw),
+    digit:   /\d/.test(pw),
+    special: [...pw].some(c => SPECIAL.has(c)),
+  };
+  check('r-length',  r.length);
+  check('r-upper',   r.upper);
+  check('r-digit',   r.digit);
+  check('r-special', r.special);
+
+  const score = Object.values(r).filter(Boolean).length;
+  const fill  = document.getElementById('strengthFill');
+  const colors = ['','#ef4444','#f59e0b','#3b82f6','#10b981'];
+  fill.style.width   = (score * 25) + '%';
+  fill.style.background = colors[score] || '';
+
+  // Enable submit only when all pass
+  document.getElementById('submitBtn').disabled = score < 4;
+  return score === 4;
+}
+
+function checkMatch() {
+  const pw  = document.getElementById('password').value;
+  const cf  = document.getElementById('confirm').value;
+  const msg = document.getElementById('matchMsg');
+  if (!cf) { msg.textContent = ''; return; }
+  if (pw === cf) {
+    msg.innerHTML = '<span style="color:#10b981"><i class="bi bi-check-circle"></i> Las contraseñas coinciden</span>';
+  } else {
+    msg.innerHTML = '<span style="color:#ef4444"><i class="bi bi-x-circle"></i> Las contraseñas no coinciden</span>';
+  }
+}
+
+document.getElementById('password').addEventListener('input', updateStrength);
+document.getElementById('confirm').addEventListener('input', checkMatch);
+// Run once on load to disable submit
+updateStrength();
+</script>
+</body>
+</html>

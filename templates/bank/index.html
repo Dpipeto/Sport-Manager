@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Banco{% endblock %}
+{% block page_title %}Transacciones Bancarias{% endblock %}
+{% block topbar_actions %}
+{% if current_user.has_permission('club.config') %}
+<a href="{{ url_for('bank.settings') }}" class="btn btn-sm btn-outline-secondary">
+  <i class="bi bi-gear me-1"></i>Configurar SMS
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if pending_count %}
+<div class="alert alert-warning d-flex align-items-center gap-2">
+  <i class="bi bi-bell-fill"></i>
+  Tienes <strong>{{ pending_count }}</strong> transacción(es) pendiente(s) por confirmar.
+</div>
+{% endif %}
+
+<ul class="nav nav-pills mb-4" style="gap:6px;">
+  {% for st, label, icon in [('pendiente','Pendientes','hourglass-split'),
+                              ('confirmada','Confirmadas','check-circle'),
+                              ('descartada','Descartadas','x-circle')] %}
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if status_filter==st }}"
+       style="font-size:13px; padding:6px 16px;"
+       href="{{ url_for('bank.index', status=st) }}">
+      <i class="bi bi-{{ icon }} me-1"></i>{{ label }}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+
+<div class="row g-3">
+  {% for tx in transactions %}
+  <div class="col-md-6 col-xl-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="badge rounded-pill"
+                style="background:{{ '#da0081' if tx.bank=='nequi' else '#fdda24' if tx.bank=='bancolombia' else '#e1111c' if tx.bank=='davivienda' else '#64748b' }};
+                       color:{{ '#000' if tx.bank=='bancolombia' else '#fff' }};">
+            {{ tx.bank | capitalize }}
+          </span>
+          <span style="font-size:11px;color:#94a3b8;">
+            {{ tx.received_at.strftime('%d/%m/%Y %H:%M') }}
+          </span>
+        </div>
+
+        <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#059669;">
+          ${{ '{:,.0f}'.format(tx.amount) }}
+        </div>
+        {% if tx.sender %}
+        <div style="font-size:13px;color:#334155;" class="mb-2">
+          <i class="bi bi-person me-1 text-muted"></i>{{ tx.sender }}
+        </div>
+        {% endif %}
+
+        <details class="mb-3">
+          <summary style="font-size:12px;color:#64748b;cursor:pointer;">Ver SMS original</summary>
+          <div style="font-size:12px;color:#475569;background:#f8fafc;border-radius:8px;padding:8px;margin-top:6px;">
+            {{ tx.raw_message }}
+          </div>
+        </details>
+
+        {% if tx.status == 'pendiente' and current_user.has_permission('billing.manage') %}
+        <form method="POST" action="{{ url_for('bank.confirm', id=tx.id) }}">
+          <div class="mb-2">
+            <select name="athlete_id" class="form-select form-select-sm">
+              <option value="">— Sin vincular a deportista —</option>
+              {% for a in athletes %}
+              <option value="{{ a.id }}">{{ a.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-2">
+            <input type="text" name="concept" class="form-control form-control-sm"
+                   value="Mensualidad" placeholder="Concepto del pago">
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success btn-sm flex-grow-1">
+              <i class="bi bi-check-lg me-1"></i>Confirmar
+            </button>
+            <button type="submit" class="btn btn-outline-danger btn-sm"
+                    formaction="{{ url_for('bank.discard', id=tx.id) }}"
+                    onclick="return confirm('¿Descartar esta transacción?')">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </form>
+        {% elif tx.status != 'pendiente' %}
+        <div style="font-size:12px;color:#64748b;">
+          <i class="bi bi-{{ 'check-circle text-success' if tx.status=='confirmada' else 'x-circle text-danger' }} me-1"></i>
+          {{ tx.status | capitalize }} por {{ tx.confirmed_by }}
+          {% if tx.athlete %} → {{ tx.athlete.full_name }}{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="card"><div class="card-body text-center py-5 text-muted">
+      <i class="bi bi-phone d-block mb-3" style="font-size:40px;"></i>
+      <h6>No hay transacciones {{ status_filter }}s</h6>
+      <p style="font-size:13px;" class="mb-0">
+        Configura el reenvío de SMS para registrar pagos automáticamente.
+        {% if current_user.has_permission('club.config') %}
+        <br><a href="{{ url_for('bank.settings') }}">Ir a configuración →</a>
+        {% endif %}
+      </p>
+    </div></div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

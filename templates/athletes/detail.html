@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% block title %}{{ athlete.full_name }}{% endblock %}
+{% block page_title %}Ficha de Deportista{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('athletes.index') }}" class="btn btn-sm btn-outline-secondary">
+  <i class="bi bi-arrow-left me-1"></i>Volver
+</a>
+<a href="{{ url_for('athletes.export_pdf', id=athlete.id) }}" class="btn btn-sm btn-outline-danger">
+  <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+</a>
+<a href="{{ url_for('athletes.export_excel', id=athlete.id) }}" class="btn btn-sm btn-outline-success">
+  <i class="bi bi-file-earmark-excel me-1"></i>Excel
+</a>
+<a href="{{ url_for('athletes.edit', id=athlete.id) }}" class="btn btn-sm btn-primary">
+  <i class="bi bi-pencil me-1"></i>Editar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- LEFT: Profile -->
+  <div class="col-lg-4">
+    <!-- Profile Card -->
+    <div class="card mb-4">
+      <div class="card-body text-center p-4">
+        <!-- Foto de perfil -->
+        <div class="position-relative d-inline-block mb-3">
+          {% if athlete.photo %}
+          <img src="{{ media_url(athlete.photo, 'photos') }}"
+               style="width:110px;height:110px;border-radius:24px;object-fit:cover;
+                      border:3px solid var(--primary-light);box-shadow:0 4px 12px rgba(0,0,0,.12);">
+          {% else %}
+          <div class="athlete-avatar" style="width:110px;height:110px;font-size:36px;border-radius:24px;">
+            {{ athlete.first_name[0] }}{{ athlete.last_name[0] }}
+          </div>
+          {% endif %}
+          {% if current_user.has_permission('athletes.manage') %}
+          <label for="photoInput" title="Cambiar foto"
+                 style="position:absolute;bottom:-6px;right:-6px;width:34px;height:34px;
+                        background:var(--primary);color:white;border-radius:50%;
+                        display:flex;align-items:center;justify-content:center;
+                        cursor:pointer;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.2);">
+            <i class="bi bi-camera-fill" style="font-size:14px;"></i>
+          </label>
+          {% endif %}
+        </div>
+        {% if current_user.has_permission('athletes.manage') %}
+        <form method="POST" action="{{ url_for('athletes.upload_photo', id=athlete.id) }}"
+              enctype="multipart/form-data" id="photoForm" class="d-none">
+          <input type="file" name="photo" id="photoInput"
+                 accept="image/jpeg,image/png,image/webp"
+                 onchange="document.getElementById('photoForm').submit()">
+        </form>
+        {% if athlete.photo %}
+        <form method="POST" action="{{ url_for('athletes.delete_photo', id=athlete.id) }}" class="mb-1"
+              onsubmit="return confirm('¿Eliminar la foto?')">
+          <button class="btn btn-link btn-sm text-danger p-0" style="font-size:11px;">quitar foto</button>
+        </form>
+        {% endif %}
+        {% endif %}
+        <h4 class="mb-1" style="font-weight:700;">{{ athlete.full_name }}</h4>
+        <p class="text-muted mb-3" style="font-size:14px;">{{ athlete.document_type }}: {{ athlete.document_number or '—' }}</p>
+        <span class="badge badge-{{ athlete.status }} rounded-pill px-3 py-2 fs-6">{{ athlete.status.upper() }}</span>
+        {% if athlete.position %}
+        <span class="badge rounded-pill px-3 py-2 fs-6" style="background:var(--primary-light);color:var(--primary);">
+          <i class="bi bi-person-badge me-1"></i>{{ athlete.position }}
+        </span>
+        {% endif %}
+
+        <!-- Quick Status Change -->
+        <div class="mt-3">
+          <form method="POST" action="{{ url_for('athletes.update_status', id=athlete.id) }}" class="d-flex gap-2 justify-content-center flex-wrap">
+            <button name="status" value="activo" class="btn btn-sm btn-outline-success">Activo</button>
+            <button name="status" value="inactivo" class="btn btn-sm btn-outline-secondary">Inactivo</button>
+            <button name="status" value="suspendido" class="btn btn-sm btn-outline-danger">Suspendido</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal Info -->
+    <div class="card mb-4">
+      <div class="card-header p-3"><i class="bi bi-person-badge me-2 text-primary"></i>Datos Personales</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr><td class="text-muted" style="width:45%;font-size:12px;">Edad</td><td style="font-size:13px;">{{ athlete.age }} años</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Nacimiento</td><td style="font-size:13px;">{{ athlete.birth_date.strftime('%d/%m/%Y') if athlete.birth_date else '—' }}</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Género</td><td style="font-size:13px;">{{ athlete.gender or '—' }}</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Posición</td><td style="font-size:13px;">{{ athlete.position or '—' }}</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Teléfono</td><td style="font-size:13px;">{{ athlete.phone or '—' }}</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Email</td><td style="font-size:13px;word-break:break-all;">{{ athlete.email or '—' }}</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Ciudad</td><td style="font-size:13px;">{{ athlete.city or '—' }}</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Dirección</td><td style="font-size:13px;">{{ athlete.address or '—' }}</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Contacto Emerg.</td><td style="font-size:13px;">{{ athlete.emergency_contact or '—' }}</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Tel. Emerg.</td><td style="font-size:13px;">{{ athlete.emergency_phone or '—' }}</td></tr>
+            <tr><td class="text-muted" style="font-size:12px;">Ingresó</td><td style="font-size:13px;">{{ athlete.entry_date.strftime('%d/%m/%Y') if athlete.entry_date else '—' }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Groups -->
+    <div class="card mb-4">
+      <div class="card-header p-3"><i class="bi bi-people me-2 text-primary"></i>Grupos</div>
+      <div class="card-body">
+        {% for ag in athlete.groups if ag.active %}
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+          <div>
+            <div style="font-size:14px;font-weight:600;">{{ ag.group.name }}</div>
+            <div class="text-muted" style="font-size:11px;">{{ ag.group.schedule or '—' }}</div>
+          </div>
+          <span class="badge bg-primary rounded-pill">${{ "{:,.0f}".format(ag.group.monthly_fee) }}</span>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0 text-center py-2">Sin grupos asignados</p>
+        {% endfor %}
+        <div class="mt-3">
+          <a href="{{ url_for('athletes.edit', id=athlete.id) }}" class="btn btn-sm btn-outline-primary w-100">
+            <i class="bi bi-pencil me-1"></i>Editar grupos
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card">
+      <div class="card-header p-3"><i class="bi bi-lightning me-2 text-warning"></i>Acciones</div>
+      <div class="card-body d-flex flex-column gap-2">
+        <a href="{{ url_for('assessments.athlete_assessments', athlete_id=athlete.id) }}" class="btn btn-outline-info btn-sm">
+          <i class="bi bi-clipboard2-pulse me-2"></i>Ver Valoraciones
+        </a>
+        <a href="{{ url_for('assessments.new_assessment', athlete_id=athlete.id) }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-plus-circle me-2"></i>Nueva Valoración
+        </a>
+        <a href="{{ url_for('billing.new') }}" class="btn btn-outline-success btn-sm">
+          <i class="bi bi-cash me-2"></i>Registrar Cobro
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Payments & Documents -->
+  <div class="col-lg-8">
+    <!-- Financial Summary -->
+    {% set total_charges = namespace(v=0) %}
+    {% set total_paid = namespace(v=0) %}
+    {% for p in payments %}
+      {% if p.type == 'cargo' %}{% set total_charges.v = total_charges.v + p.amount %}{% endif %}
+      {% if p.type == 'pago' %}{% set total_paid.v = total_paid.v + p.amount %}{% endif %}
+    {% endfor %}
+    {% set balance = total_charges.v - total_paid.v %}
+
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fee2e2;color:#ef4444;"><i class="bi bi-arrow-up-circle"></i></div>
+          <div>
+            <div class="stat-value" style="font-size:18px;color:#ef4444;">${{ "{:,.0f}".format(total_charges.v) }}</div>
+            <div class="stat-label">Total Cargos</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#d1fae5;color:#059669;"><i class="bi bi-arrow-down-circle"></i></div>
+          <div>
+            <div class="stat-value" style="font-size:18px;color:#059669;">${{ "{:,.0f}".format(total_paid.v) }}</div>
+            <div class="stat-label">Total Pagado</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:{{ '#fef3c7' if balance > 0 else '#d1fae5' }};color:{{ '#d97706' if balance > 0 else '#059669' }};"><i class="bi bi-wallet2"></i></div>
+          <div>
+            <div class="stat-value" style="font-size:18px;color:{{ '#d97706' if balance > 0 else '#059669' }};">${{ "{:,.0f}".format([balance,0]|max) }}</div>
+            <div class="stat-label">Saldo Pendiente</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center p-3">
+        <span><i class="bi bi-receipt me-2 text-primary"></i>Historial de Pagos y Cobros</span>
+        <a href="{{ url_for('billing.new') }}" class="btn btn-sm btn-primary"><i class="bi bi-plus me-1"></i>Nuevo</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th><th>Concepto</th><th>Tipo</th><th>Monto</th><th>Estado</th><th>Método</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+              <tr>
+                <td style="font-size:12px;">{{ p.date.strftime('%d/%m/%Y') if p.date else '—' }}</td>
+                <td style="font-size:13px;">{{ p.concept }}</td>
+                <td>
+                  <span class="badge {{ 'bg-danger' if p.type=='cargo' else 'bg-success' }} rounded-pill">{{ p.type }}</span>
+                </td>
+                <td style="font-size:13px;font-weight:600;">${{ "{:,.0f}".format(p.amount) }}</td>
+                <td><span class="badge badge-{{ p.status }} rounded-pill">{{ p.status }}</span></td>
+                <td style="font-size:12px;">{{ p.payment_method or '—' }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="6" class="text-center py-4 text-muted">Sin movimientos registrados.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Upload -->
+    <div class="card mb-4">
+      <div class="card-header p-3"><i class="bi bi-folder2-open me-2 text-primary"></i>Documentos</div>
+      <div class="card-body">
+        <!-- Upload Form -->
+        <form method="POST" action="{{ url_for('athletes.upload_document', id=athlete.id) }}" enctype="multipart/form-data" class="mb-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+              <label class="form-label mb-1" style="font-size:12px;">Archivo (PDF, JPG, PNG)</label>
+              <input type="file" name="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label mb-1" style="font-size:12px;">Descripción</label>
+              <input type="text" name="description" class="form-control form-control-sm" placeholder="Descripción del documento">
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-upload me-1"></i>Subir</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Documents List -->
+        {% if documents %}
+        <div class="list-group">
+          {% for doc in documents %}
+          <div class="list-group-item d-flex align-items-center gap-3 py-2">
+            <i class="bi bi-{{ 'file-earmark-pdf text-danger' if doc.file_type=='pdf' else 'file-earmark-image text-info' }}" style="font-size:20px;"></i>
+            <div class="flex-grow-1">
+              <div style="font-size:13px;font-weight:600;">{{ doc.original_name }}</div>
+              <div class="text-muted" style="font-size:11px;">{{ doc.description or '—' }} · {{ doc.uploaded_at.strftime('%d/%m/%Y') }}</div>
+            </div>
+            <a href="{{ media_url(doc.filename, 'docs_' ~ athlete.id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-eye"></i>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted text-center mb-0 py-3">No hay documentos cargados.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Notes -->
+    {% if athlete.notes %}
+    <div class="card">
+      <div class="card-header p-3"><i class="bi bi-sticky me-2 text-warning"></i>Notas</div>
+      <div class="card-body"><p class="mb-0" style="font-size:14px;">{{ athlete.notes }}</p></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

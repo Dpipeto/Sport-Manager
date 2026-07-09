@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Solicitudes{% endblock %}
+{% block page_title %}Solicitudes de Registro{% endblock %}
+
+{% block content %}
+<ul class="nav nav-pills mb-4" style="gap:6px;">
+  {% for st, label, icon in [('pendiente','Pendientes','hourglass-split'),
+                              ('aprobada','Aprobadas','check-circle'),
+                              ('rechazada','Rechazadas','x-circle')] %}
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if status_filter==st }} btn-sm"
+       style="font-size:13px; padding:6px 16px;"
+       href="{{ url_for('platform.requests_list', status=st) }}">
+      <i class="bi bi-{{ icon }} me-1"></i>{{ label }}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+
+<div class="row g-3">
+  {% for r in requests %}
+  <div class="col-md-6 col-xl-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          {% if r.logo %}
+          <img src="{{ media_url(r.logo, 'schools') }}"
+               style="width:44px;height:44px;border-radius:10px;object-fit:contain;background:#f1f5f9;">
+          {% else %}
+          <div class="athlete-avatar" style="width:44px;height:44px;background:#d97706;">{{ r.club_name[0] }}</div>
+          {% endif %}
+          <div>
+            <div style="font-weight:700;font-size:15px;">{{ r.club_name }}</div>
+            <div style="font-size:12px;color:#64748b;">{{ r.city or 'Sin ciudad' }}</div>
+          </div>
+        </div>
+        <div style="font-size:13px;" class="mb-1">
+          <i class="bi bi-person me-1 text-muted"></i>{{ r.owner_name }}
+        </div>
+        <div style="font-size:13px;" class="mb-1">
+          <i class="bi bi-envelope me-1 text-muted"></i>{{ r.owner_email }}
+        </div>
+        <div style="font-size:12px;color:#94a3b8;" class="mb-3">
+          <i class="bi bi-calendar me-1"></i>{{ r.created_at.strftime('%d/%m/%Y %H:%M') }}
+        </div>
+
+        {% if r.status == 'pendiente' %}
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('platform.request_detail', id=r.id) }}" class="btn btn-sm btn-outline-primary flex-grow-1">
+            <i class="bi bi-eye me-1"></i>Revisar
+          </a>
+          <form method="POST" action="{{ url_for('platform.approve_request', id=r.id) }}" class="flex-grow-1">
+            <button class="btn btn-sm btn-success w-100"
+                    onclick="return confirm('¿Aprobar y crear el club {{ r.club_name }}?')">
+              <i class="bi bi-check-lg me-1"></i>Aprobar
+            </button>
+          </form>
+        </div>
+        {% else %}
+        <span class="badge {{ 'badge-pagado' if r.status=='aprobada' else 'badge-vencido' }} rounded-pill">
+          {{ r.status }}
+        </span>
+        {% if r.reviewed_at %}
+        <span style="font-size:11px;color:#94a3b8;" class="ms-2">{{ r.reviewed_at.strftime('%d/%m/%Y') }}</span>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="card"><div class="card-body text-center py-5 text-muted">
+      <i class="bi bi-inbox d-block mb-2" style="font-size:36px;"></i>
+      No hay solicitudes {{ status_filter }}s.
+    </div></div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

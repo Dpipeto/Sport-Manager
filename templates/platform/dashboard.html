@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Plataforma{% endblock %}
+{% block page_title %}Panel de la Plataforma{% endblock %}
+
+{% block content %}
+<!-- KPIs SaaS -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e8f0fe;color:#1a56db;"><i class="bi bi-buildings"></i></div>
+      <div><div class="stat-value">{{ total_clubs }}</div><div class="stat-label">Clubes</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#d1fae5;color:#059669;"><i class="bi bi-check-circle"></i></div>
+      <div><div class="stat-value" style="color:#059669;">{{ active_clubs }}</div><div class="stat-label">Activos</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fee2e2;color:#ef4444;"><i class="bi bi-pause-circle"></i></div>
+      <div><div class="stat-value" style="color:#ef4444;">{{ suspended_clubs }}</div><div class="stat-label">Suspendidos</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7;color:#d97706;"><i class="bi bi-hourglass-split"></i></div>
+      <div><div class="stat-value" style="color:#d97706;">{{ pending_requests }}</div><div class="stat-label">Solicitudes</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;"><i class="bi bi-people"></i></div>
+      <div><div class="stat-value" style="color:#7c3aed;">{{ total_users }}</div><div class="stat-label">Usuarios</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card" style="cursor:pointer;" onclick="location.href='{{ url_for('platform.requests_list') }}'">
+      <div class="stat-icon" style="background:#e0f2fe;color:#0891b2;"><i class="bi bi-lightning"></i></div>
+      <div><div class="stat-value" style="font-size:14px;color:#0891b2;">Acciones</div><div class="stat-label">rápidas ↗</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Gráficas SaaS -->
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header p-3"><i class="bi bi-graph-up me-2 text-primary"></i>Clubes registrados por mes</div>
+      <div class="card-body"><canvas id="clubsChart" height="90"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header p-3"><i class="bi bi-pie-chart me-2 text-primary"></i>Usuarios por rol</div>
+      <div class="card-body d-flex justify-content-center"><div style="max-width:280px;"><canvas id="rolesChart"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- Columna derecha -->
+  <div class="col-lg-4">
+    <!-- Solicitudes pendientes -->
+    <div class="card mb-4">
+      <div class="card-header p-3 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-inbox me-2 text-warning"></i>Solicitudes pendientes</span>
+        <a href="{{ url_for('platform.requests_list') }}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+      </div>
+      <div class="card-body p-0">
+        {% for r in recent_requests %}
+        <a href="{{ url_for('platform.request_detail', id=r.id) }}"
+           class="d-flex align-items-center gap-2 p-3 text-decoration-none border-bottom">
+          <div class="athlete-avatar" style="width:36px;height:36px;font-size:13px;background:#d97706;">
+            {{ r.club_name[0] }}
+          </div>
+          <div class="flex-grow-1">
+            <div style="font-size:13px;font-weight:600;color:#0f172a;">{{ r.club_name }}</div>
+            <div style="font-size:11px;color:#64748b;">{{ r.owner_name }} · {{ r.created_at.strftime('%d/%m/%Y') }}</div>
+          </div>
+          <i class="bi bi-chevron-right text-muted"></i>
+        </a>
+        {% else %}
+        <div class="text-center py-4 text-muted" style="font-size:13px;">
+          <i class="bi bi-check2-circle d-block mb-2" style="font-size:24px;"></i>
+          Sin solicitudes pendientes
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Actividad reciente -->
+    <div class="card">
+      <div class="card-header p-3 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-activity me-2 text-primary"></i>Actividad reciente</span>
+        <a href="{{ url_for('platform.logs') }}" class="btn btn-sm btn-outline-secondary">Logs</a>
+      </div>
+      <div class="card-body p-0" style="max-height:340px;overflow-y:auto;">
+        {% for log in recent_activity %}
+        <div class="p-2 px-3 border-bottom">
+          <div style="font-size:12px;font-weight:600;">{{ log.action }}</div>
+          <div style="font-size:11px;color:#64748b;">
+            {{ log.user_name }} · {{ log.timestamp.strftime('%d/%m %H:%M') }}
+            {% if log.details %} · {{ log.details[:50] }}{% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted" style="font-size:13px;">Sin actividad registrada</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Clubes por mes
+new Chart(document.getElementById('clubsChart'), {
+  type: 'bar',
+  data: {
+    labels: [{% for m, c in clubs_by_month %}'{{ m }}',{% endfor %}],
+    datasets: [{
+      label: 'Clubes registrados',
+      data: [{% for m, c in clubs_by_month %}{{ c }},{% endfor %}],
+      backgroundColor: '#1a56db', borderRadius: 8,
+    }]
+  },
+  options: { plugins: { legend: { display: false } },
+             scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+});
+
+// Usuarios por rol
+const roleNames = {superadmin:'Super Admin','dueño':'Dueños',entrenador:'Entrenadores',recepcion:'Recepción'};
+new Chart(document.getElementById('rolesChart'), {
+  type: 'doughnut',
+  data: {
+    labels: [{% for role, count in users_by_role.items() %}roleNames['{{ role }}'] || '{{ role }}',{% endfor %}],
+    datasets: [{
+      data: [{% for role, count in users_by_role.items() %}{{ count }},{% endfor %}],
+      backgroundColor: ['#ef4444','#7c3aed','#1a56db','#059669','#d97706'],
+    }]
+  },
+  options: { plugins: { legend: { position: 'bottom' } } }
+});
+</script>
+{% endblock %}

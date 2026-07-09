@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Dueños{% endblock %}
+{% block page_title %}Dueños de Club{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Dueño</th><th>Email</th><th>Club</th>
+            <th>Último acceso</th><th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in owners %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="athlete-avatar" style="width:32px;height:32px;font-size:12px;background:#7c3aed;">
+                  {{ o.name[0] }}
+                </div>
+                <span style="font-size:14px;font-weight:600;">{{ o.name }}</span>
+              </div>
+            </td>
+            <td style="font-size:13px;">{{ o.email }}</td>
+            <td style="font-size:13px;">{{ o.club.name if o.club else '—' }}</td>
+            <td style="font-size:12px;">{{ o.last_login.strftime('%d/%m/%Y %H:%M') if o.last_login else 'Nunca' }}</td>
+            <td>
+              <span class="badge {{ 'badge-activo' if o.active else 'badge-inactivo' }} rounded-pill">
+                {{ 'Activo' if o.active else 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-end">
+              <!-- Reset password -->
+              <button class="btn btn-sm btn-outline-info" title="Restablecer contraseña"
+                      data-bs-toggle="modal" data-bs-target="#resetModal{{ o.id }}">
+                <i class="bi bi-key"></i>
+              </button>
+              <!-- Toggle active -->
+              <form method="POST" action="{{ url_for('platform.toggle_owner', id=o.id) }}" class="d-inline">
+                <button class="btn btn-sm {{ 'btn-outline-warning' if o.active else 'btn-outline-success' }}"
+                        title="{{ 'Desactivar' if o.active else 'Activar' }}">
+                  <i class="bi {{ 'bi-pause' if o.active else 'bi-play' }}"></i>
+                </button>
+              </form>
+              <!-- Delete -->
+              <form method="POST" action="{{ url_for('platform.delete_owner', id=o.id) }}" class="d-inline"
+                    onsubmit="return confirm('¿Eliminar al dueño {{ o.name }}?')">
+                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form>
+
+              <!-- Modal reset password -->
+              <div class="modal fade" id="resetModal{{ o.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <form method="POST" action="{{ url_for('platform.reset_owner_password', id=o.id) }}">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Restablecer contraseña — {{ o.name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body text-start">
+                        <label class="form-label">Nueva contraseña</label>
+                        <input type="text" name="new_password" class="form-control" required
+                               placeholder="Ej: NuevaClave#2024">
+                        <div class="form-text">
+                          Mínimo 8 caracteres, una mayúscula, un número y un especial (. , # $ % & /)
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Restablecer</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center py-5 text-muted">
+            No hay dueños registrados. Las solicitudes aprobadas aparecerán aquí.
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

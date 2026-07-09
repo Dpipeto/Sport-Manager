@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}Configuración{% endblock %}
+{% block page_title %}Configuración — Sedes y Grupos{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- VENUES -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center p-3">
+        <span><i class="bi bi-building me-2 text-primary"></i>Sedes</span>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newVenueModal">
+          <i class="bi bi-plus me-1"></i>Nueva Sede
+        </button>
+      </div>
+      <div class="card-body p-0">
+        {% for v in venues %}
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
+          <div>
+            <div style="font-size:14px;font-weight:700;">{{ v.name }}</div>
+            <div class="text-muted" style="font-size:12px;">{{ v.address }}, {{ v.city }}</div>
+            <div class="text-muted" style="font-size:12px;"><i class="bi bi-telephone me-1"></i>{{ v.phone or '—' }}</div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge {{ 'badge-activo' if v.active else 'badge-inactivo' }}">{{ 'Activa' if v.active else 'Inactiva' }}</span>
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                    data-bs-target="#editVenueModal{{ v.id }}"><i class="bi bi-pencil"></i></button>
+            <form method="POST" action="{{ url_for('config.delete_venue', id=v.id) }}" class="d-inline"
+                  onsubmit="return confirm('¿Eliminar sede {{ v.name }}?')">
+              <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+        </div>
+        <!-- Edit Venue Modal -->
+        <div class="modal fade" id="editVenueModal{{ v.id }}" tabindex="-1">
+          <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Editar Sede</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form method="POST" action="{{ url_for('config.edit_venue', id=v.id) }}">
+            <div class="modal-body">
+              <div class="mb-3"><label class="form-label">Nombre</label><input type="text" name="name" class="form-control" value="{{ v.name }}" required></div>
+              <div class="mb-3"><label class="form-label">Dirección</label><input type="text" name="address" class="form-control" value="{{ v.address or '' }}"></div>
+              <div class="mb-3"><label class="form-label">Ciudad</label><input type="text" name="city" class="form-control" value="{{ v.city or '' }}"></div>
+              <div class="mb-3"><label class="form-label">Teléfono</label><input type="text" name="phone" class="form-control" value="{{ v.phone or '' }}"></div>
+              <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="active" {{ 'checked' if v.active }}><label class="form-check-label">Activa</label></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary btn-sm">Guardar</button></div>
+            </form>
+          </div></div>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">No hay sedes registradas.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- GROUPS -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center p-3">
+        <span><i class="bi bi-people me-2 text-primary"></i>Grupos</span>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newGroupModal">
+          <i class="bi bi-plus me-1"></i>Nuevo Grupo
+        </button>
+      </div>
+      <div class="card-body p-0">
+        {% for g in groups %}
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
+          <div>
+            <div style="font-size:14px;font-weight:700;">{{ g.name }}</div>
+            <div class="text-muted" style="font-size:12px;">{{ g.venue.name if g.venue else '—' }} · {{ g.schedule or '—' }}</div>
+            <div style="font-size:13px;font-weight:600;color:#059669;">${{ "{:,.0f}".format(g.monthly_fee) }}/mes</div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge {{ 'badge-activo' if g.active else 'badge-inactivo' }}">{{ 'Activo' if g.active else 'Inactivo' }}</span>
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                    data-bs-target="#editGroupModal{{ g.id }}"><i class="bi bi-pencil"></i></button>
+            <form method="POST" action="{{ url_for('config.delete_group', id=g.id) }}" class="d-inline"
+                  onsubmit="return confirm('¿Eliminar grupo {{ g.name }}?')">
+              <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+        </div>
+        <!-- Edit Group Modal -->
+        <div class="modal fade" id="editGroupModal{{ g.id }}" tabindex="-1">
+          <div class="modal-dialog"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Editar Grupo</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form method="POST" action="{{ url_for('config.edit_group', id=g.id) }}">
+            <div class="modal-body">
+              <div class="mb-2"><label class="form-label">Nombre</label><input type="text" name="name" class="form-control" value="{{ g.name }}" required></div>
+              <div class="mb-2"><label class="form-label">Sede</label>
+                <select name="venue_id" class="form-select">{% for v in venues %}<option value="{{ v.id }}" {{ 'selected' if g.venue_id==v.id }}>{{ v.name }}</option>{% endfor %}</select>
+              </div>
+              <div class="mb-2"><label class="form-label">Descripción</label><input type="text" name="description" class="form-control" value="{{ g.description or '' }}"></div>
+              <div class="mb-2"><label class="form-label">Horario</label><input type="text" name="schedule" class="form-control" value="{{ g.schedule or '' }}"></div>
+              <div class="mb-2"><label class="form-label">Cuota mensual</label><input type="number" name="monthly_fee" class="form-control" value="{{ g.monthly_fee }}" step="1000"></div>
+              <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="active" {{ 'checked' if g.active }}><label class="form-check-label">Activo</label></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary btn-sm">Guardar</button></div>
+            </form>
+          </div></div>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">No hay grupos registrados.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Venue Modal -->
+<div class="modal fade" id="newVenueModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Nueva Sede</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <form method="POST" action="{{ url_for('config.new_venue') }}">
+    <div class="modal-body">
+      <div class="mb-3"><label class="form-label">Nombre *</label><input type="text" name="name" class="form-control" required></div>
+      <div class="mb-3"><label class="form-label">Dirección</label><input type="text" name="address" class="form-control"></div>
+      <div class="mb-3"><label class="form-label">Ciudad</label><input type="text" name="city" class="form-control"></div>
+      <div class="mb-3"><label class="form-label">Teléfono</label><input type="text" name="phone" class="form-control"></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary btn-sm">Crear Sede</button></div>
+    </form>
+  </div></div>
+</div>
+
+<!-- New Group Modal -->
+<div class="modal fade" id="newGroupModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Nuevo Grupo</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <form method="POST" action="{{ url_for('config.new_group') }}">
+    <div class="modal-body">
+      <div class="mb-2"><label class="form-label">Nombre *</label><input type="text" name="name" class="form-control" required></div>
+      <div class="mb-2"><label class="form-label">Sede *</label>
+        <select name="venue_id" class="form-select" required>
+          <option value="">Seleccionar sede...</option>
+          {% for v in venues %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="mb-2"><label class="form-label">Descripción</label><input type="text" name="description" class="form-control"></div>
+      <div class="mb-2"><label class="form-label">Horario</label><input type="text" name="schedule" class="form-control" placeholder="Ej: Lun-Mié-Vie 6AM"></div>
+      <div class="mb-2"><label class="form-label">Cuota mensual ($)</label><input type="number" name="monthly_fee" class="form-control" step="1000" value="0"></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary btn-sm">Crear Grupo</button></div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}

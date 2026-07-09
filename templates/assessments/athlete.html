@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block title %}Valoraciones — {{ athlete.full_name }}{% endblock %}
+{% block page_title %}Valoraciones: {{ athlete.full_name }}{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('assessments.index') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+<a href="{{ url_for('assessments.new_assessment', athlete_id=athlete.id) }}" class="btn btn-sm btn-primary"><i class="bi bi-plus me-1"></i>Nueva Valoración</a>
+<a href="{{ url_for('assessments.new_injury', athlete_id=athlete.id) }}" class="btn btn-sm btn-outline-danger"><i class="bi bi-bandaid me-1"></i>Registrar Lesión</a>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4 p-3" style="background:#dbeafe;border-radius:12px;">
+  <div class="athlete-avatar" style="width:52px;height:52px;font-size:20px;border-radius:14px;">
+    {{ athlete.first_name[0] }}{{ athlete.last_name[0] }}
+  </div>
+  <div>
+    <h5 class="mb-0" style="font-weight:700;">{{ athlete.full_name }}</h5>
+    <small class="text-muted">{{ athlete.age }} años · {{ athlete.status.upper() }}</small>
+  </div>
+  <div class="ms-auto">
+    <a href="{{ url_for('athletes.detail', id=athlete.id) }}" class="btn btn-sm btn-outline-primary">Ver ficha completa</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Assessments -->
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header p-3 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clipboard2-pulse me-2 text-primary"></i>Historial de Valoraciones</span>
+        <span class="badge bg-primary rounded-pill">{{ assessments|length }} valoraciones</span>
+      </div>
+      {% for a in assessments %}
+      <div class="card-body border-top">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h6 class="mb-1">{{ a.date.strftime('%d/%m/%Y') }} — <span class="badge bg-secondary">{{ a.type }}</span></h6>
+          </div>
+          <form method="POST" action="{{ url_for('assessments.delete_assessment', id=a.id) }}"
+                onsubmit="return confirm('¿Eliminar esta valoración?')">
+            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+          </form>
+        </div>
+        <div class="row g-3">
+          {% if a.weight or a.height %}
+          <div class="col-12">
+            <h6 class="text-muted mb-2" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;">Antropométrico</h6>
+            <div class="row g-2">
+              {% set anthro = [('Peso', a.weight, 'kg'), ('Talla', a.height, 'cm'), ('IMC', a.bmi, ''), ('% Grasa', a.body_fat, '%'), ('Masa Musc.', a.muscle_mass, 'kg'), ('Cintura', a.waist, 'cm'), ('Cadera', a.hip, 'cm'), ('Pecho', a.chest, 'cm')] %}
+              {% for label, val, unit in anthro %}{% if val %}
+              <div class="col-6 col-md-3">
+                <div class="p-2 text-center" style="background:#f8f9fa;border-radius:8px;">
+                  <div style="font-size:18px;font-weight:700;color:#1a56db;">{{ val }}{{ unit }}</div>
+                  <div class="text-muted" style="font-size:11px;">{{ label }}</div>
+                </div>
+              </div>
+              {% endif %}{% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% if a.flexibility or a.strength %}
+          <div class="col-12">
+            <h6 class="text-muted mb-2" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;">Pruebas Motoras</h6>
+            <div class="row g-2">
+              {% set motor = [('Flexibilidad', a.flexibility, 'cm'), ('Fuerza', a.strength, 'kg'), ('Resistencia', a.resistance, 'm'), ('Velocidad', a.speed, 's'), ('Coordinación', a.coordination, 'pt')] %}
+              {% for label, val, unit in motor %}{% if val %}
+              <div class="col-6 col-md-3">
+                <div class="p-2 text-center" style="background:#f0fdf4;border-radius:8px;">
+                  <div style="font-size:18px;font-weight:700;color:#059669;">{{ val }}{{ unit }}</div>
+                  <div class="text-muted" style="font-size:11px;">{{ label }}</div>
+                </div>
+              </div>
+              {% endif %}{% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% if a.vo2_max or a.resting_hr %}
+          <div class="col-12">
+            <h6 class="text-muted mb-2" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;">Capacidad Funcional</h6>
+            <div class="row g-2">
+              {% set func = [('VO₂ Max', a.vo2_max, 'ml/kg'), ('FC Reposo', a.resting_hr, 'bpm'), ('FC Máxima', a.max_hr, 'bpm'), ('PA Sistólica', a.blood_pressure_sys, 'mmHg'), ('PA Diastólica', a.blood_pressure_dia, 'mmHg')] %}
+              {% for label, val, unit in func %}{% if val %}
+              <div class="col-6 col-md-3">
+                <div class="p-2 text-center" style="background:#eff6ff;border-radius:8px;">
+                  <div style="font-size:18px;font-weight:700;color:#7c3aed;">{{ val }}</div>
+                  <div class="text-muted" style="font-size:11px;">{{ label }} <span style="color:#94a3b8;font-size:10px;">{{ unit }}</span></div>
+                </div>
+              </div>
+              {% endif %}{% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% if a.notes %}
+          <div class="col-12">
+            <div class="p-3" style="background:#fef3c7;border-radius:8px;">
+              <small class="text-muted"><i class="bi bi-sticky me-1"></i>{{ a.notes }}</small>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-clipboard2" style="font-size:40px;"></i>
+        <p class="mt-2">No hay valoraciones registradas.</p>
+        <a href="{{ url_for('assessments.new_assessment', athlete_id=athlete.id) }}" class="btn btn-primary btn-sm">Agregar valoración</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Injuries -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header p-3 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-bandaid me-2 text-danger"></i>Registro de Lesiones</span>
+        <span class="badge bg-danger rounded-pill">{{ injuries|length }}</span>
+      </div>
+      {% for inj in injuries %}
+      <div class="card-body border-top">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <span class="badge {{ 'bg-danger' if inj.severity=='grave' else 'bg-warning text-dark' if inj.severity=='moderada' else 'bg-info' }}">{{ inj.severity }}</span>
+            <span class="ms-2 fw-600" style="font-size:13px;">{{ inj.injury_type }}</span>
+          </div>
+          <form method="POST" action="{{ url_for('assessments.delete_injury', id=inj.id) }}"
+                onsubmit="return confirm('¿Eliminar?')">
+            <button class="btn btn-sm btn-outline-danger py-0 px-1"><i class="bi bi-x"></i></button>
+          </form>
+        </div>
+        <p class="text-muted mb-1" style="font-size:12px;"><i class="bi bi-geo me-1"></i>{{ inj.body_part }}</p>
+        <p class="text-muted mb-1" style="font-size:12px;"><i class="bi bi-calendar me-1"></i>{{ inj.date.strftime('%d/%m/%Y') }}</p>
+        {% if inj.description %}<p style="font-size:12px;margin-bottom:4px;">{{ inj.description }}</p>{% endif %}
+        {% if inj.treatment %}<p style="font-size:12px;color:#059669;margin-bottom:4px;"><i class="bi bi-heart-pulse me-1"></i>{{ inj.treatment }}</p>{% endif %}
+        <span class="badge {{ 'bg-danger' if inj.status=='activa' else 'bg-success' }}">{{ inj.status }}</span>
+      </div>
+      {% else %}
+      <div class="card-body text-center py-4 text-muted">
+        <i class="bi bi-bandaid" style="font-size:32px;"></i>
+        <p class="mt-2 mb-0">Sin lesiones registradas.</p>
+      </div>
+      {% endfor %}
+      <div class="card-footer">
+        <a href="{{ url_for('assessments.new_injury', athlete_id=athlete.id) }}" class="btn btn-outline-danger btn-sm w-100">
+          <i class="bi bi-plus me-1"></i>Registrar lesión
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

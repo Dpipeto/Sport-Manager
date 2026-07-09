@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI CARDS -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dbeafe; color:#1a56db;"><i class="bi bi-people-fill"></i></div>
+      <div>
+        <div class="stat-value">{{ total_athletes }}</div>
+        <div class="stat-label">Total Deportistas</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#d1fae5; color:#059669;"><i class="bi bi-person-check-fill"></i></div>
+      <div>
+        <div class="stat-value" style="color:#059669;">{{ active_athletes }}</div>
+        <div class="stat-label">Deportistas Activos</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#d1fae5; color:#059669;"><i class="bi bi-cash-stack"></i></div>
+      <div>
+        <div class="stat-value" style="color:#059669; font-size:22px;">${{ "{:,.0f}".format(monthly_income) }}</div>
+        <div class="stat-label">Ingresos del Mes</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7; color:#d97706;"><i class="bi bi-exclamation-circle-fill"></i></div>
+      <div>
+        <div class="stat-value" style="color:#d97706; font-size:22px;">${{ "{:,.0f}".format(total_pending) }}</div>
+        <div class="stat-label">Deuda Pendiente</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Monthly Athletes Chart -->
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center justify-content-between p-3">
+        <span><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Deportistas Nuevos por Mes</span>
+        <span class="badge bg-primary rounded-pill">Últimos 12 meses</span>
+      </div>
+      <div class="card-body p-3">
+        <canvas id="athletesChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Donut -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header p-3">
+        <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Estado de Deportistas
+      </div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center">
+        <canvas id="statusChart" width="200" height="200"></canvas>
+        <div class="mt-3 d-flex gap-3 flex-wrap justify-content-center" style="font-size:13px;">
+          <span><span class="badge" style="background:#1a56db;">●</span> Activos: {{ active_athletes }}</span>
+          <span><span class="badge" style="background:#64748b;">●</span> Inactivos: {{ inactive_athletes }}</span>
+          <span><span class="badge" style="background:#ef4444;">●</span> Suspendidos: {{ suspended_athletes }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Income Chart -->
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header p-3">
+        <i class="bi bi-currency-dollar me-2 text-success"></i>Ingresos Mensuales
+      </div>
+      <div class="card-body p-3">
+        <canvas id="incomeChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Groups & Quick Stats -->
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header p-3"><i class="bi bi-lightning-fill me-2 text-warning"></i>Resumen Rápido</div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0">
+          <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-muted"><i class="bi bi-people me-2"></i>Grupos Activos</span>
+            <strong>{{ total_groups }}</strong>
+          </li>
+          <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-muted"><i class="bi bi-person-x me-2"></i>Inactivos</span>
+            <strong>{{ inactive_athletes }}</strong>
+          </li>
+          <li class="d-flex justify-content-between align-items-center py-2 border-bottom">
+            <span class="text-muted"><i class="bi bi-ban me-2"></i>Suspendidos</span>
+            <strong>{{ suspended_athletes }}</strong>
+          </li>
+          <li class="d-flex justify-content-between align-items-center py-2">
+            <span class="text-muted"><i class="bi bi-percent me-2"></i>Tasa de Actividad</span>
+            <strong>{{ "%.0f"|format((active_athletes/total_athletes*100) if total_athletes else 0) }}%</strong>
+          </li>
+        </ul>
+        <div class="mt-3">
+          <a href="{{ url_for('athletes.new') }}" class="btn btn-primary btn-sm w-100">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Deportista
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Recent Athletes -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center p-3">
+        <span><i class="bi bi-person-lines-fill me-2 text-primary"></i>Deportistas Recientes</span>
+        <a href="{{ url_for('athletes.index') }}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          {% for a in recent_athletes %}
+          <a href="{{ url_for('athletes.detail', id=a.id) }}" class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 px-3">
+            <div class="athlete-avatar" style="width:36px;height:36px;font-size:13px;">{{ a.first_name[0] }}{{ a.last_name[0] }}</div>
+            <div class="flex-grow-1">
+              <div class="fw-600" style="font-size:14px;">{{ a.full_name }}</div>
+              <div class="text-muted" style="font-size:12px;">Ingresó: {{ a.entry_date.strftime('%d/%m/%Y') if a.entry_date else '—' }}</div>
+            </div>
+            <span class="badge badge-{{ a.status }} rounded-pill">{{ a.status }}</span>
+          </a>
+          {% else %}
+          <div class="p-4 text-center text-muted">No hay deportistas registrados.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Payments -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center p-3">
+        <span><i class="bi bi-receipt me-2 text-success"></i>Últimos Movimientos</span>
+        <a href="{{ url_for('billing.index') }}" class="btn btn-sm btn-outline-success">Ver todos</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          {% for p in recent_payments %}
+          <div class="list-group-item d-flex align-items-center gap-3 py-3 px-3">
+            <div class="stat-icon" style="width:36px;height:36px;border-radius:8px;font-size:16px;background:{{ '#d1fae5' if p.type=='pago' else '#fee2e2' }};color:{{ '#059669' if p.type=='pago' else '#ef4444' }};">
+              <i class="bi bi-{{ 'arrow-down-circle' if p.type=='pago' else 'arrow-up-circle' }}"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div style="font-size:13px;font-weight:600;">{{ p.concept[:35] }}</div>
+              <div class="text-muted" style="font-size:11px;">{{ p.athlete.full_name if p.athlete else '—' }}</div>
+            </div>
+            <div class="text-end">
+              <div class="fw-700" style="font-size:13px;color:{{ '#059669' if p.type=='pago' else '#ef4444' }};">${{ "{:,.0f}".format(p.amount) }}</div>
+              <div class="text-muted" style="font-size:11px;">{{ p.date.strftime('%d/%m/%Y') if p.date else '—' }}</div>
+            </div>
+          </div>
+          {% else %}
+          <div class="p-4 text-center text-muted">No hay movimientos recientes.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const analytics = {{ analytics | tojson }};
+const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+// Athletes Chart
+const aLabels = analytics.monthly_new.map(d => MONTHS[d.month-1] + ' ' + String(d.year).slice(2));
+const aData = analytics.monthly_new.map(d => d.count);
+new Chart(document.getElementById('athletesChart'), {
+  type: 'bar',
+  data: {
+    labels: aLabels,
+    datasets: [{
+      label: 'Deportistas nuevos',
+      data: aData,
+      backgroundColor: 'rgba(26,86,219,.2)',
+      borderColor: '#1a56db',
+      borderWidth: 2,
+      borderRadius: 6,
+    }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+});
+
+// Status Donut
+const statusData = analytics.status_counts;
+new Chart(document.getElementById('statusChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Activos', 'Inactivos', 'Suspendidos'],
+    datasets: [{
+      data: [statusData.activo||0, statusData.inactivo||0, statusData.suspendido||0],
+      backgroundColor: ['#1a56db', '#64748b', '#ef4444'],
+      borderWidth: 0,
+    }]
+  },
+  options: { cutout: '68%', plugins: { legend: { display: false } } }
+});
+
+// Income Chart
+const iLabels = analytics.monthly_income.map(d => MONTHS[d.month-1] + ' ' + String(d.year).slice(2));
+const iData = analytics.monthly_income.map(d => d.total);
+new Chart(document.getElementById('incomeChart'), {
+  type: 'line',
+  data: {
+    labels: iLabels,
+    datasets: [{
+      label: 'Ingresos',
+      data: iData,
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16,185,129,.1)',
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: '#10b981',
+      pointRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } }
+  }
+});
+</script>
+{% endblock %}

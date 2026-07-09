@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar Usuario' if user else 'Nuevo Usuario' }}{% endblock %}
+{% block page_title %}{{ 'Editar Usuario' if user else 'Nuevo Usuario' }}{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('users.index') }}" class="btn btn-sm btn-outline-secondary">
+  <i class="bi bi-arrow-left me-1"></i>Volver
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-6">
+<div class="card">
+  <div class="card-header p-3">
+    <i class="bi bi-person-gear me-2 text-primary"></i>
+    {{ 'Editar Usuario' if user else 'Nuevo Usuario' }}
+  </div>
+  <div class="card-body">
+    <form method="POST" enctype="multipart/form-data">
+      <!-- Foto de perfil -->
+      <div class="mb-4 text-center">
+        {% if user and user.photo %}
+        <img src="{{ media_url(user.photo, 'photos') }}"
+             id="photoPreview"
+             style="width:90px;height:90px;border-radius:20px;object-fit:cover;
+                    border:3px solid #e8f0fe;margin-bottom:10px;">
+        {% else %}
+        <div class="athlete-avatar mx-auto" id="photoPlaceholder"
+             style="width:90px;height:90px;font-size:30px;border-radius:20px;margin-bottom:10px;">
+          {{ user.name[0] if user else '?' }}
+        </div>
+        <img id="photoPreview" class="d-none"
+             style="width:90px;height:90px;border-radius:20px;object-fit:cover;
+                    border:3px solid #e8f0fe;margin-bottom:10px;">
+        {% endif %}
+        <div>
+          <input type="file" name="photo" id="photoInput" class="form-control form-control-sm mx-auto"
+                 style="max-width:280px;" accept="image/jpeg,image/png,image/webp">
+          <div class="form-text">Foto de perfil (JPG, PNG, WebP) — opcional</div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Nombre completo</label>
+        <input type="text" name="name" class="form-control"
+               value="{{ user.name if user else '' }}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" name="email" class="form-control"
+               value="{{ user.email if user else '' }}" required>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">
+          {{ 'Nueva contraseña (dejar vacío para no cambiar)' if user else 'Contraseña' }}
+        </label>
+        <div class="input-group">
+          <input type="password" name="password" id="password" class="form-control"
+                 {{ '' if user else 'required' }} maxlength="128" autocomplete="new-password"
+                 placeholder="{{ 'Dejar vacío para mantener actual' if user else 'Crea una contraseña segura' }}">
+          <span class="input-group-text" style="cursor:pointer;background:#f8fafc;border-color:#e2e8f0;"
+                onclick="togglePass()">
+            <i class="bi bi-eye" id="eyeIcon"></i>
+          </span>
+        </div>
+        <!-- Barra de fuerza (solo visible cuando hay texto) -->
+        <div id="strengthWrap" style="display:none; margin-top:8px;">
+          <div style="height:4px;border-radius:4px;background:#e2e8f0;overflow:hidden;">
+            <div id="strengthFill" style="height:100%;border-radius:4px;width:0;transition:width .3s,background .3s;"></div>
+          </div>
+          <ul style="margin:8px 0 0;padding:0;list-style:none;">
+            <li id="r-length"  class="rule-item"><i class="bi bi-circle"></i> Mínimo 8 caracteres</li>
+            <li id="r-upper"   class="rule-item"><i class="bi bi-circle"></i> Una mayúscula (A-Z)</li>
+            <li id="r-digit"   class="rule-item"><i class="bi bi-circle"></i> Un número (0-9)</li>
+            <li id="r-special" class="rule-item"><i class="bi bi-circle"></i> Un especial: . , # $ % &amp; /</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Multi-role selector -->
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Roles del usuario</label>
+        <div class="form-text mb-2">
+          Puedes asignar varios roles. Los permisos son la unión de todos.
+          {% if not current_user.has_role('admin') %}
+          <span class="text-danger">· No puedes asignar el rol de Administrador.</span>
+          {% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for r in roles %}
+          {% set is_checked = user and r in user.roles %}
+          <div class="role-card {{ 'role-card-checked' if is_checked }}"
+               onclick="toggleRole(this, '{{ r.id }}')"
+               data-role="{{ r.name }}"
+               style="cursor:pointer; border:2px solid {{ '#ef4444' if r.name=='admin' else '#7c3aed' if r.name=='dueño' else '#1a56db' if r.name=='entrenador' else '#64748b' }};
+                      border-radius:10px; padding:10px 14px; background:{{ 'rgba(26,86,219,.08)' if is_checked else 'white' }};
+                      transition:all .15s; min-width:140px;">
+            <input type="checkbox" name="role_ids" value="{{ r.id }}"
+                   id="role_{{ r.id }}" style="display:none"
+                   {{ 'checked' if is_checked }}>
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi {{ 'bi-shield-fill-check text-danger' if r.name=='admin'
+                              else 'bi-star-fill' if r.name=='dueño'
+                              else 'bi-person-fill-check' if r.name=='entrenador'
+                              else 'bi-reception-4' }}"
+                 style="color:{{ '#ef4444' if r.name=='admin' else '#7c3aed' if r.name=='dueño' else '#1a56db' if r.name=='entrenador' else '#64748b' }}; font-size:18px;"></i>
+              <div>
+                <div style="font-weight:700; font-size:13px; text-transform:capitalize;">{{ r.name }}</div>
+                <div style="font-size:11px; color:#64748b;">{{ r.description }}</div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="active" id="active"
+                 {{ 'checked' if not user or user.active }}>
+          <label class="form-check-label" for="active">Usuario activo</label>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <a href="{{ url_for('users.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-circle me-2"></i>{{ 'Actualizar' if user else 'Crear Usuario' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.rule-item { font-size:12px; color:#94a3b8; display:flex; align-items:center; gap:6px;
+             margin-bottom:3px; transition:color .2s; }
+.rule-item.ok { color:#10b981; }
+.rule-item i { font-size:13px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleRole(card, roleId) {
+  const cb = document.getElementById('role_' + roleId);
+  cb.checked = !cb.checked;
+  card.classList.toggle('role-card-checked', cb.checked);
+  card.style.background = cb.checked ? 'rgba(26,86,219,.08)' : 'white';
+}
+document.getElementById('photoInput').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const ph = document.getElementById('photoPlaceholder');
+    if (ph) ph.classList.add('d-none');
+    const img = document.getElementById('photoPreview');
+    img.src = e.target.result;
+    img.classList.remove('d-none');
+  };
+  reader.readAsDataURL(file);
+});
+
+function togglePass() {
+  const f = document.getElementById('password');
+  const i = document.getElementById('eyeIcon');
+  if (f.type === 'password') { f.type='text';  i.className='bi bi-eye-slash'; }
+  else                       { f.type='password'; i.className='bi bi-eye'; }
+}
+
+const SPECIAL = new Set(['.', ',', '#', '$', '%', '&', '/']);
+
+function checkRule(id, ok) {
+  const li = document.getElementById(id);
+  if (!li) return;
+  const icon = li.querySelector('i');
+  li.classList.toggle('ok', ok);
+  icon.className = ok ? 'bi bi-check-circle-fill' : 'bi bi-circle';
+}
+
+document.getElementById('password').addEventListener('input', function() {
+  const pw = this.value;
+  const wrap = document.getElementById('strengthWrap');
+  wrap.style.display = pw ? 'block' : 'none';
+  if (!pw) return;
+  const r = {
+    length:  pw.length >= 8,
+    upper:   /[A-Z]/.test(pw),
+    digit:   /\d/.test(pw),
+    special: [...pw].some(c => SPECIAL.has(c)),
+  };
+  checkRule('r-length',  r.length);
+  checkRule('r-upper',   r.upper);
+  checkRule('r-digit',   r.digit);
+  checkRule('r-special', r.special);
+  const score = Object.values(r).filter(Boolean).length;
+  const fill  = document.getElementById('strengthFill');
+  fill.style.width = (score * 25) + '%';
+  fill.style.background = ['','#ef4444','#f59e0b','#3b82f6','#10b981'][score] || '';
+});
+
+</script>
+{% endblock %}

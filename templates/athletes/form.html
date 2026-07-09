@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('athletes.index') }}" class="btn btn-sm btn-outline-secondary">
+  <i class="bi bi-arrow-left me-1"></i>Cancelar
+</a>
+{% endblock %}
+
+{% block content %}
+{% if athlete %}
+<!-- Athlete name banner -->
+<div class="d-flex align-items-center gap-3 mb-4 p-3" style="background:#dbeafe;border-radius:12px;">
+  <div class="athlete-avatar" style="width:48px;height:48px;font-size:18px;border-radius:12px;">
+    {{ athlete.first_name[0] }}{{ athlete.last_name[0] }}
+  </div>
+  <div>
+    <h5 class="mb-0" style="font-weight:700;">{{ athlete.full_name }}</h5>
+    <small class="text-muted">Editando información del deportista</small>
+  </div>
+</div>
+{% endif %}
+
+<form method="POST">
+<div class="row g-4">
+  <!-- Personal Data -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header p-3"><i class="bi bi-person-badge me-2 text-primary"></i>Datos Personales</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label">Nombres *</label>
+            <input type="text" name="first_name" class="form-control" value="{{ athlete.first_name if athlete else '' }}" required>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Apellidos *</label>
+            <input type="text" name="last_name" class="form-control" value="{{ athlete.last_name if athlete else '' }}" required>
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label">Tipo Doc.</label>
+            <select name="document_type" class="form-select">
+              {% for dt in ['CC','TI','CE','PA','NIT'] %}
+              <option value="{{ dt }}" {{ 'selected' if athlete and athlete.document_type==dt }}>{{ dt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-sm-8">
+            <label class="form-label">N° Documento</label>
+            <input type="text" name="document_number" class="form-control" value="{{ athlete.document_number if athlete else '' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Fecha de Nacimiento</label>
+            <input type="date" name="birth_date" class="form-control" value="{{ athlete.birth_date.isoformat() if athlete and athlete.birth_date else '' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Género</label>
+            <select name="gender" class="form-select">
+              <option value="">Seleccionar</option>
+              <option value="Masculino" {{ 'selected' if athlete and athlete.gender=='Masculino' }}>Masculino</option>
+              <option value="Femenino" {{ 'selected' if athlete and athlete.gender=='Femenino' }}>Femenino</option>
+              <option value="Otro" {{ 'selected' if athlete and athlete.gender=='Otro' }}>Otro</option>
+            </select>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Posición de juego</label>
+            <input type="text" name="position" class="form-control" list="positionOptions"
+                   value="{{ athlete.position if athlete and athlete.position else '' }}"
+                   placeholder="Ej: Delantero, Armador, Líbero...">
+            <datalist id="positionOptions">
+              <option value="Portero"><option value="Defensa"><option value="Mediocampista">
+              <option value="Delantero"><option value="Base"><option value="Escolta">
+              <option value="Alero"><option value="Ala-Pívot"><option value="Pívot">
+              <option value="Armador"><option value="Opuesto"><option value="Punta">
+              <option value="Central"><option value="Líbero">
+            </datalist>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" name="phone" class="form-control" value="{{ athlete.phone if athlete else '' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ athlete.email if athlete else '' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Dirección</label>
+            <input type="text" name="address" class="form-control" value="{{ athlete.address if athlete else '' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Ciudad</label>
+            <input type="text" name="city" class="form-control" value="{{ athlete.city if athlete else '' }}">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enrollment & Emergency -->
+  <div class="col-lg-6">
+    <div class="card mb-4">
+      <div class="card-header p-3"><i class="bi bi-calendar-check me-2 text-success"></i>Inscripción</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label">Fecha de Ingreso</label>
+            <input type="date" name="entry_date" class="form-control"
+                   value="{{ athlete.entry_date.isoformat() if athlete and athlete.entry_date else '' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label">Estado</label>
+            <select name="status" class="form-select">
+              <option value="activo" {{ 'selected' if not athlete or athlete.status=='activo' }}>Activo</option>
+              <option value="inactivo" {{ 'selected' if athlete and athlete.status=='inactivo' }}>Inactivo</option>
+              <option value="suspendido" {{ 'selected' if athlete and athlete.status=='suspendido' }}>Suspendido</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header p-3"><i class="bi bi-telephone-fill me-2 text-danger"></i>Contacto de Emergencia</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-7">
+            <label class="form-label">Nombre</label>
+            <input type="text" name="emergency_contact" class="form-control" value="{{ athlete.emergency_contact if athlete else '' }}">
+          </div>
+          <div class="col-sm-5">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" name="emergency_phone" class="form-control" value="{{ athlete.emergency_phone if athlete else '' }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Groups -->
+    <div class="card mb-4">
+      <div class="card-header p-3"><i class="bi bi-people me-2 text-primary"></i>Grupos</div>
+      <div class="card-body">
+        {% set selected_groups = athlete.groups | map(attribute='group_id') | list if athlete else [] %}
+        {% for g in groups %}
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="groups" value="{{ g.id }}" id="g{{ g.id }}"
+                 {{ 'checked' if g.id in selected_groups }}>
+          <label class="form-check-label" for="g{{ g.id }}">
+            <strong>{{ g.name }}</strong>
+            <span class="text-muted" style="font-size:12px;"> — {{ g.schedule or '—' }} — ${{ "{:,.0f}".format(g.monthly_fee) }}/mes</span>
+          </label>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No hay grupos disponibles. <a href="{{ url_for('config.index') }}">Crear grupos</a></p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card">
+      <div class="card-header p-3"><i class="bi bi-sticky me-2 text-warning"></i>Notas</div>
+      <div class="card-body">
+        <textarea name="notes" class="form-control" rows="3" placeholder="Observaciones adicionales...">{{ athlete.notes if athlete else '' }}</textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payments History (edit only) -->
+{% if athlete %}
+<div class="card mt-4">
+  <div class="card-header p-3"><i class="bi bi-receipt me-2 text-primary"></i>Deudas y Pagos</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead class="table-light">
+          <tr><th>Fecha</th><th>Concepto</th><th>Tipo</th><th>Monto</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          {% for p in athlete.payments %}
+          <tr>
+            <td style="font-size:12px;">{{ p.date.strftime('%d/%m/%Y') if p.date else '—' }}</td>
+            <td style="font-size:13px;">{{ p.concept }}</td>
+            <td><span class="badge {{ 'bg-danger' if p.type=='cargo' else 'bg-success' }} rounded-pill">{{ p.type }}</span></td>
+            <td style="font-weight:600;">${{ "{:,.0f}".format(p.amount) }}</td>
+            <td><span class="badge badge-{{ p.status }}">{{ p.status }}</span></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="text-center py-3 text-muted">Sin movimientos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Save -->
+<div class="d-flex justify-content-end gap-2 mt-4">
+  <a href="{{ url_for('athletes.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+  <button type="submit" class="btn btn-primary px-4">
+    <i class="bi bi-check-circle me-2"></i>{{ 'Actualizar' if athlete else 'Crear Deportista' }}
+  </button>
+</div>
+</form>
+{% endblock %}
