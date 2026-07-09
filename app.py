@@ -158,5 +158,13 @@ def create_app():
         _migrate_columns(db)
         from models import seed_data
         seed_data()
+        # Visible en logs de Render — para verificar qué BD está en uso
+        dialect = db.engine.dialect.name
+        if dialect == 'sqlite':
+            print('⚠️  BASE DE DATOS: SQLite (EFÍMERA — los datos se '
+                  'pierden al reiniciar). Configura DATABASE_URL para usar PostgreSQL.',
+                  flush=True)
+        else:
+            print(f'✅ BASE DE DATOS: {dialect} (persistente)', flush=True)
 
     return app

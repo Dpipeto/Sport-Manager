@@ -380,4 +380,4 @@ def settings():
                       tags='white_check_mark')
             flash('Notificación de prueba enviada. Revisa tu celular.', 'info')
         return redirect(url_for('platform.settings'))
-    return render_template('platform/settings.html')
+    return render_template('platform/settings.html', db_dialect=db.engine.dialect.name)
